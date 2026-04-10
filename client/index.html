@@ -7,76 +7,165 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="shell">
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h1>Hermes Desktop</h1>
-          <button id="new-session-btn" class="ghost">New Session</button>
+    <header class="app-topbar">
+      <div class="topbar-drag-region"></div>
+      <div class="topbar-left topbar-no-drag">
+        <button id="toggle-left-btn" class="chrome-button" title="Toggle sidebar">☰</button>
+        <button class="chrome-button muted" title="Back">←</button>
+        <button class="chrome-button muted" title="Forward">→</button>
+      </div>
+      <div class="topbar-center topbar-no-drag">
+        <div id="window-thread-title" class="window-thread-title">No active session</div>
+        <div id="window-workspace-title" class="window-workspace-title">hermes-agent</div>
+        <button class="chrome-button small muted" title="More">⋯</button>
+      </div>
+      <div class="topbar-right topbar-no-drag">
+        <button class="chrome-button muted" title="Run">▷</button>
+        <button class="chrome-pill">提交</button>
+        <button id="toggle-right-btn" class="chrome-button" title="Toggle inspector">⌲</button>
+      </div>
+    </header>
+    <div class="app-shell">
+      <aside class="rail">
+        <div class="rail-top">
+          <button id="new-session-btn" class="nav-action">
+            <span class="nav-icon">✎</span>
+            <span>新线程</span>
+          </button>
+          <button class="nav-item active">
+            <span class="nav-icon">⌕</span>
+            <span>Search</span>
+          </button>
+          <button class="nav-item">
+            <span class="nav-icon">⬢</span>
+            <span>技能</span>
+          </button>
+          <button class="nav-item muted">
+            <span class="nav-icon">◌</span>
+            <span>Plugins</span>
+          </button>
+          <button class="nav-item">
+            <span class="nav-icon">◷</span>
+            <span>自动化</span>
+          </button>
         </div>
-        <div class="workspace-card">
-          <div class="label">Workspace</div>
-          <div id="workspace-path" class="workspace-path">Not selected</div>
-          <button id="pick-workspace-btn" class="secondary">Choose Folder</button>
+
+        <div class="rail-section">
+          <div class="rail-section-head">
+            <span>线程</span>
+            <div class="rail-head-actions">
+              <button id="refresh-sessions-btn" class="icon-button small" title="Refresh">⟳</button>
+              <button id="pick-workspace-btn" class="icon-button small" title="Choose Workspace">⊞</button>
+            </div>
+          </div>
+          <div class="workspace-chip">
+            <div class="workspace-chip-label">Workspace</div>
+            <div id="workspace-name" class="workspace-chip-name">未选择</div>
+            <div id="workspace-path" class="workspace-chip-path">Choose a folder to anchor Hermes.</div>
+          </div>
+          <div id="sessions-list" class="thread-list"></div>
         </div>
-        <div class="sessions-header">
-          <span>Sessions</span>
-          <button id="refresh-sessions-btn" class="ghost">Refresh</button>
+
+        <div class="rail-bottom">
+          <button class="nav-item settings-row">
+            <span class="nav-icon">⚙</span>
+            <span>设置</span>
+          </button>
         </div>
-        <div id="sessions-list" class="sessions-list"></div>
       </aside>
 
-      <main class="main">
-        <header class="topbar">
-          <div>
-            <div id="active-title" class="active-title">No active session</div>
-            <div id="status-line" class="status-line">Waiting for Hermes sidecar</div>
+      <main class="workspace">
+        <header class="toolbar">
+          <div class="toolbar-left">
+            <div class="toolbar-title-group">
+              <div id="active-title" class="toolbar-title">No active session</div>
+              <div id="workspace-context" class="toolbar-subtitle">hermes-agent</div>
+            </div>
           </div>
-          <div class="topbar-actions">
-            <button id="stop-btn" class="danger">Stop</button>
+          <div class="toolbar-right">
+            <div id="run-state-pill" class="state-pill idle">Idle</div>
+            <button id="stop-btn" class="icon-button" title="Stop">⏹</button>
+            <button class="icon-button" title="Apply later">⇪</button>
+            <button class="branch-pill" type="button">main</button>
           </div>
         </header>
 
-        <section id="messages" class="messages"></section>
-
-        <section class="composer">
-          <textarea id="prompt-input" placeholder="Ask Hermes to inspect, plan, patch, or run code..."></textarea>
-          <div class="composer-actions">
-            <button id="send-btn" class="primary">Send</button>
+        <section class="workspace-body">
+          <div class="transcript-column">
+            <div id="status-banner" class="status-banner">Waiting for Hermes sidecar</div>
+            <section id="messages" class="transcript"></section>
+            <section class="composer-wrap">
+              <div class="composer">
+                <div class="composer-toolbar">
+                  <button class="composer-tool">＋</button>
+                  <div id="provider-pill" class="composer-pill">sidecar</div>
+                  <div id="model-pill" class="composer-pill">model</div>
+                  <div id="toolset-pill" class="composer-pill">toolset</div>
+                </div>
+                <textarea id="prompt-input" placeholder="Ask Hermes to inspect, plan, patch, or run code..."></textarea>
+                <div class="composer-footer">
+                  <div class="composer-meta">
+                    <span id="status-line">Ready</span>
+                    <span class="dot">•</span>
+                    <span id="session-meta">No session</span>
+                  </div>
+                  <button id="send-btn" class="send-button" title="Send">↑</button>
+                </div>
+              </div>
+              <div class="workspace-footer">
+                <div class="footer-chip">本地</div>
+                <div class="footer-chip">自定义 (config.toml)</div>
+                <div id="footer-branch" class="footer-chip">branch: main</div>
+              </div>
+            </section>
           </div>
+
+          <aside class="inspector">
+            <header class="inspector-header">
+              <div class="inspector-title-group">
+                <div id="inspector-title" class="inspector-title">未暂存</div>
+                <div id="inspector-subtitle" class="inspector-subtitle">Changes, files, and active tool detail appear here.</div>
+              </div>
+              <button class="icon-button small" title="More">⋯</button>
+            </header>
+
+            <section id="inspector-empty" class="inspector-empty">
+              <div class="inspector-empty-title">暂无待变更内容</div>
+              <div class="inspector-empty-copy">代码变更、文件预览和工具输出将在此处显示。</div>
+            </section>
+
+            <section class="inspector-panel">
+              <div class="panel-label">Active Tool Timeline</div>
+              <div id="tool-timeline" class="tool-timeline"></div>
+            </section>
+
+            <section class="inspector-panel settings-panel">
+              <div class="panel-label">Workspace Settings</div>
+              <label class="field">
+                <span>Model</span>
+                <input id="model-input" type="text" />
+              </label>
+              <label class="field">
+                <span>Toolsets</span>
+                <input id="toolsets-input" type="text" />
+              </label>
+              <label class="field">
+                <span>Approvals</span>
+                <select id="approvals-select">
+                  <option value="manual">manual</option>
+                  <option value="smart">smart</option>
+                  <option value="off">off</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Default cwd</span>
+                <input id="cwd-input" type="text" />
+              </label>
+              <button id="save-settings-btn" class="soft-button">Save Settings</button>
+            </section>
+          </aside>
         </section>
       </main>
-
-      <aside class="inspector">
-        <section class="panel">
-          <div class="panel-title">Tool Timeline</div>
-          <div id="tool-timeline" class="tool-timeline"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-title">Settings</div>
-          <label class="field">
-            <span>Model</span>
-            <input id="model-input" type="text" />
-          </label>
-          <label class="field">
-            <span>Toolsets (comma separated)</span>
-            <input id="toolsets-input" type="text" />
-          </label>
-          <label class="field">
-            <span>Approvals</span>
-            <select id="approvals-select">
-              <option value="manual">manual</option>
-              <option value="smart">smart</option>
-              <option value="off">off</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Default cwd</span>
-            <input id="cwd-input" type="text" />
-          </label>
-          <button id="save-settings-btn" class="secondary">Save Settings</button>
-        </section>
-      </aside>
     </div>
 
     <div id="modal-backdrop" class="modal-backdrop hidden">

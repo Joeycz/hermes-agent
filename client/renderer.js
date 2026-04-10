@@ -9,12 +9,20 @@ const state = {
   pendingApproval: null,
   pendingClarify: null,
   busy: false,
+  leftCollapsed: false,
+  rightCollapsed: false,
 };
 
 const els = {
+  workspaceName: document.getElementById('workspace-name'),
   workspacePath: document.getElementById('workspace-path'),
+  workspaceContext: document.getElementById('workspace-context'),
+  statusBanner: document.getElementById('status-banner'),
   statusLine: document.getElementById('status-line'),
+  sessionMeta: document.getElementById('session-meta'),
   activeTitle: document.getElementById('active-title'),
+  windowThreadTitle: document.getElementById('window-thread-title'),
+  windowWorkspaceTitle: document.getElementById('window-workspace-title'),
   sessionsList: document.getElementById('sessions-list'),
   messages: document.getElementById('messages'),
   toolTimeline: document.getElementById('tool-timeline'),
@@ -23,6 +31,14 @@ const els = {
   toolsetsInput: document.getElementById('toolsets-input'),
   approvalsSelect: document.getElementById('approvals-select'),
   cwdInput: document.getElementById('cwd-input'),
+  modelPill: document.getElementById('model-pill'),
+  toolsetPill: document.getElementById('toolset-pill'),
+  providerPill: document.getElementById('provider-pill'),
+  runStatePill: document.getElementById('run-state-pill'),
+  footerBranch: document.getElementById('footer-branch'),
+  inspectorTitle: document.getElementById('inspector-title'),
+  inspectorSubtitle: document.getElementById('inspector-subtitle'),
+  inspectorEmpty: document.getElementById('inspector-empty'),
   modalBackdrop: document.getElementById('modal-backdrop'),
   modalTitle: document.getElementById('modal-title'),
   modalBody: document.getElementById('modal-body'),
@@ -37,6 +53,10 @@ async function boot() {
   });
   await refreshConfig();
   await refreshSessions();
+  renderWorkspace();
+  renderMessages();
+  renderTools();
+  renderInspector();
 }
 
 function bindUI() {
@@ -46,6 +66,8 @@ function bindUI() {
   document.getElementById('send-btn').addEventListener('click', sendPrompt);
   document.getElementById('stop-btn').addEventListener('click', interruptRun);
   document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+  document.getElementById('toggle-left-btn').addEventListener('click', toggleLeftSidebar);
+  document.getElementById('toggle-right-btn').addEventListener('click', toggleRightSidebar);
 }
 
 async function chooseWorkspace() {
@@ -53,6 +75,7 @@ async function chooseWorkspace() {
   if (picked) {
     state.workspace = picked;
     renderWorkspace();
+    renderStatus('Workspace selected');
   }
 }
 
@@ -105,7 +128,9 @@ async function sendPrompt() {
   state.busy = true;
   els.promptInput.value = '';
   renderMessages();
+  renderInspector();
   renderStatus('Running Hermes...');
+  renderRunState();
   await window.hermesDesktop.command('message.send', {
     session_id: state.activeSessionId,
     text,
@@ -151,7 +176,10 @@ function activateSession(session) {
   renderMessages();
   renderTools();
   renderSessions();
+  renderInspector();
+  renderRunState();
   renderStatus(session.busy ? 'Running Hermes...' : 'Session ready');
+  syncWindowHeader();
 }
 
 function handleRuntimeEvent(message) {
@@ -162,6 +190,7 @@ function handleRuntimeEvent(message) {
   switch (type) {
     case 'ready':
       renderStatus(`Hermes sidecar ready (pid ${payload.pid})`);
+      renderSettings();
       break;
     case 'session.updated':
       updateSession(payload);
@@ -177,9 +206,12 @@ function handleRuntimeEvent(message) {
         state.streamingText = '';
         state.messages = normalizeMessages(payload.messages || []);
         state.busy = false;
-        renderMessages();
-        renderStatus(payload.interrupted ? 'Run interrupted' : 'Run completed');
-      }
+      renderMessages();
+      renderInspector();
+      renderRunState();
+      renderStatus(payload.interrupted ? 'Run interrupted' : 'Run completed');
+      syncWindowHeader();
+    }
       refreshSessions();
       break;
     case 'tool.started':
@@ -233,6 +265,9 @@ function updateSession(session) {
     state.workspace = session.cwd || state.workspace;
     renderWorkspace();
     renderMessages();
+    renderInspector();
+    renderRunState();
+    syncWindowHeader();
   }
   renderSessions();
 }
@@ -251,6 +286,7 @@ function updateToolTimeline(type, payload) {
     existing.duration = payload.duration || null;
   }
   renderTools();
+  renderInspector();
 }
 
 function showApprovalModal(payload) {
@@ -294,15 +330,17 @@ function showClarifyModal(payload) {
 
 function showPromptModal(payload) {
   els.modalTitle.textContent = 'Need clarification';
-  els.modalBody.textContent = payload.question;
+  els.modalBody.innerHTML = '';
+  const copy = document.createElement('div');
+  copy.textContent = payload.question;
+  els.modalBody.appendChild(copy);
   els.modalActions.innerHTML = '';
   const input = document.createElement('textarea');
   input.placeholder = 'Reply to Hermes...';
   input.style.minHeight = '120px';
-  els.modalBody.appendChild(document.createElement('br'));
+  input.style.marginTop = '14px';
   els.modalBody.appendChild(input);
   const submit = document.createElement('button');
-  submit.className = 'primary';
   submit.textContent = 'Submit';
   submit.addEventListener('click', async () => {
     await window.hermesDesktop.command('clarify.resolve', {
@@ -323,7 +361,7 @@ function showModal(title, body, actions, onSelect) {
   for (const action of actions) {
     const button = document.createElement('button');
     button.textContent = action;
-    button.className = action === 'deny' ? 'danger' : 'secondary';
+    button.className = action === 'deny' ? 'danger' : '';
     button.addEventListener('click', () => onSelect(action));
     els.modalActions.appendChild(button);
   }
@@ -339,15 +377,33 @@ function hideModal() {
 }
 
 function renderWorkspace() {
-  els.workspacePath.textContent = state.workspace || 'Not selected';
+  const workspaceName = basename(state.workspace) || '未选择';
+  els.workspaceName.textContent = workspaceName;
+  els.workspacePath.textContent = state.workspace || 'Choose a folder to anchor Hermes.';
+  els.workspaceContext.textContent = workspaceName;
+  els.windowWorkspaceTitle.textContent = workspaceName;
 }
 
 function renderStatus(text) {
+  els.statusBanner.textContent = text;
   els.statusLine.textContent = text;
+}
+
+function renderRunState() {
+  els.runStatePill.textContent = state.busy ? 'Running' : 'Idle';
+  els.runStatePill.className = `state-pill ${state.busy ? 'running' : 'idle'}`;
 }
 
 function renderSessions() {
   els.sessionsList.innerHTML = '';
+  if (state.sessions.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'session-meta';
+    empty.style.padding = '10px 12px';
+    empty.textContent = 'No threads yet. Start a workspace session to begin.';
+    els.sessionsList.appendChild(empty);
+    return;
+  }
   for (const session of state.sessions) {
     const item = document.createElement('button');
     item.className = `session-item${session.session_id === state.activeSessionId ? ' active' : ''}`;
@@ -360,7 +416,7 @@ function renderSessions() {
 
     const meta = document.createElement('div');
     meta.className = 'session-meta';
-    meta.textContent = `${session.model || 'default model'} • ${session.cwd || '.'}${session.busy ? ' • running' : ''}`;
+    meta.textContent = `${basename(session.cwd || '.') || '.'} • ${session.model || 'default model'}${session.busy ? ' • running' : ''}`;
     item.appendChild(meta);
     els.sessionsList.appendChild(item);
   }
@@ -372,25 +428,52 @@ function renderMessages() {
   if (state.streamingText) {
     combined.push({ role: 'assistant', content: state.streamingText });
   }
+
   if (combined.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'message tool';
-    empty.textContent = 'Start a session and ask Hermes to inspect or modify this codebase.';
+    const empty = document.createElement('section');
+    empty.className = 'document-empty';
+    empty.innerHTML = `
+      <h2>Use Hermes like a focused coding workspace.</h2>
+      <p>Start a thread, point it at a repository, and use the transcript as a planning and execution surface. Changes, file previews, and active tools will appear on the right.</p>
+    `;
     els.messages.appendChild(empty);
   }
+
   for (const msg of combined) {
-    const el = document.createElement('div');
-    el.className = `message ${msg.role}`;
-    el.textContent = msg.content || '';
-    els.messages.appendChild(el);
+    const block = document.createElement('article');
+    block.className = `message ${msg.role}`;
+
+    const label = document.createElement('div');
+    label.className = 'message-label';
+    label.textContent = roleLabel(msg.role);
+    block.appendChild(label);
+
+    const body = document.createElement('div');
+    body.className = 'message-body';
+    body.textContent = msg.content || '';
+    block.appendChild(body);
+
+    els.messages.appendChild(block);
   }
+
   els.messages.scrollTop = els.messages.scrollHeight;
   const active = state.sessions.find((item) => item.session_id === state.activeSessionId);
   els.activeTitle.textContent = active?.title || state.activeSessionId || 'No active session';
+  els.windowThreadTitle.textContent = active?.title || state.activeSessionId || 'No active session';
+  els.sessionMeta.textContent = active
+    ? `${active.model || state.settings?.model || 'default model'} • ${basename(active.cwd || state.workspace || '.') || '.'}`
+    : 'No session';
 }
 
 function renderTools() {
   els.toolTimeline.innerHTML = '';
+  if (state.tools.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'tool-item';
+    empty.textContent = 'No active tools yet.';
+    els.toolTimeline.appendChild(empty);
+    return;
+  }
   for (const tool of state.tools) {
     const el = document.createElement('div');
     el.className = `tool-item ${tool.status}`;
@@ -401,6 +484,30 @@ function renderTools() {
   }
 }
 
+function renderInspector() {
+  const hasChanges = state.tools.length > 0 || state.pendingApproval || state.pendingClarify;
+  els.inspectorEmpty.style.display = hasChanges ? 'none' : 'flex';
+
+  if (state.pendingApproval) {
+    els.inspectorTitle.textContent = 'Approval required';
+    els.inspectorSubtitle.textContent = 'Hermes is waiting for confirmation before running a guarded command.';
+    return;
+  }
+  if (state.pendingClarify) {
+    els.inspectorTitle.textContent = 'Clarification required';
+    els.inspectorSubtitle.textContent = 'Hermes is waiting for additional input to continue the turn.';
+    return;
+  }
+  if (state.tools.length > 0) {
+    const latest = state.tools[0];
+    els.inspectorTitle.textContent = latest.status === 'running' ? 'Active tool' : 'Recent tool output';
+    els.inspectorSubtitle.textContent = latest.preview;
+    return;
+  }
+  els.inspectorTitle.textContent = '未暂存';
+  els.inspectorSubtitle.textContent = 'Changes, files, and active tool detail appear here.';
+}
+
 function renderSettings() {
   if (!state.settings) {
     return;
@@ -409,6 +516,26 @@ function renderSettings() {
   els.toolsetsInput.value = (state.settings.toolsets || []).join(', ');
   els.approvalsSelect.value = state.settings.approvals_mode || 'manual';
   els.cwdInput.value = state.settings.cwd || '.';
+  els.modelPill.textContent = state.settings.model || 'default model';
+  els.toolsetPill.textContent = (state.settings.toolsets || []).join(', ') || 'toolsets';
+  els.providerPill.textContent = state.settings.approvals_mode || 'manual';
+  els.footerBranch.textContent = 'branch: main';
+}
+
+function toggleLeftSidebar() {
+  state.leftCollapsed = !state.leftCollapsed;
+  document.body.classList.toggle('left-collapsed', state.leftCollapsed);
+}
+
+function toggleRightSidebar() {
+  state.rightCollapsed = !state.rightCollapsed;
+  document.body.classList.toggle('right-collapsed', state.rightCollapsed);
+}
+
+function syncWindowHeader() {
+  const active = state.sessions.find((item) => item.session_id === state.activeSessionId);
+  els.windowThreadTitle.textContent = active?.title || state.activeSessionId || 'No active session';
+  els.windowWorkspaceTitle.textContent = basename(active?.cwd || state.workspace || '') || 'hermes-agent';
 }
 
 function normalizeMessages(messages) {
@@ -418,6 +545,20 @@ function normalizeMessages(messages) {
       role: msg.role,
       content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content || ''),
     }));
+}
+
+function basename(filePath) {
+  if (!filePath) {
+    return '';
+  }
+  return filePath.split(/[\\/]/).filter(Boolean).pop() || filePath;
+}
+
+function roleLabel(role) {
+  if (role === 'user') return 'Prompt';
+  if (role === 'assistant') return 'Hermes';
+  if (role === 'tool') return 'System';
+  return role;
 }
 
 boot().catch((error) => {

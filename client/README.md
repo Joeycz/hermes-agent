@@ -10,6 +10,7 @@ client for Hermes.
 - `main.js` / `preload.js` — Electron host process and bridge
 - `index.html` / `renderer.js` / `styles.css` — first-pass renderer UI
 - `PLAN.md` — agreed implementation plan
+- `design.md` — visual and interaction direction derived from the Codex reference
 
 ## Local usage
 
