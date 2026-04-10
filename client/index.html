@@ -7,45 +7,119 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="i-menu" viewBox="0 0 24 24">
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      </symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24">
+        <path d="m15 6-6 6 6 6" />
+      </symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24">
+        <path d="m9 6 6 6-6 6" />
+      </symbol>
+      <symbol id="i-more" viewBox="0 0 24 24">
+        <circle cx="6" cy="12" r="1.5" />
+        <circle cx="12" cy="12" r="1.5" />
+        <circle cx="18" cy="12" r="1.5" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24">
+        <path d="m8 6 10 6-10 6V6Z" />
+      </symbol>
+      <symbol id="i-panel-right" viewBox="0 0 24 24">
+        <path d="M4 5h16v14H4zM14 5v14" />
+      </symbol>
+      <symbol id="i-compose" viewBox="0 0 24 24">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="6" />
+        <path d="m20 20-4.2-4.2" />
+      </symbol>
+      <symbol id="i-boxes" viewBox="0 0 24 24">
+        <path d="M2.97 7.27 12 12l9.03-4.73" />
+        <path d="M12 22V12" />
+        <path d="m20 13.5 2-1.05V7.56a2 2 0 0 0-1.06-1.77l-7-3.67a2 2 0 0 0-1.88 0l-7 3.67A2 2 0 0 0 4 7.56v4.89a2 2 0 0 0 1.06 1.77l7 3.67a2 2 0 0 0 1.88 0l2.06-1.08" />
+        <path d="m4.93 5.48 7.07 3.7 7.07-3.7" />
+        <path d="M7.5 4.27 16.5 9" />
+      </symbol>
+      <symbol id="i-puzzle" viewBox="0 0 24 24">
+        <path d="M19.44 12.99a1.5 1.5 0 0 1 0-1.98l1.06-1.06a2 2 0 0 0 0-2.83l-1.41-1.41a2 2 0 0 0-2.83 0l-1.06 1.06a1.5 1.5 0 0 1-1.98 0l-.35-.35a1.5 1.5 0 0 1 0-1.98l.7-.7a2 2 0 0 0-2.83-2.83l-.7.7a1.5 1.5 0 0 1-1.98 0l-.35-.35a1.5 1.5 0 0 0-2.12 0L4.1 5.37a1.5 1.5 0 0 0 0 2.12l.35.35a1.5 1.5 0 0 1 0 1.98l-.7.7a2 2 0 1 0 2.83 2.83l.7-.7a1.5 1.5 0 0 1 1.98 0l.35.35a1.5 1.5 0 0 1 0 1.98l-1.06 1.06a2 2 0 0 0 0 2.83l1.41 1.41a2 2 0 0 0 2.83 0l1.06-1.06a1.5 1.5 0 0 1 1.98 0l.35.35a1.5 1.5 0 0 0 2.12 0l1.76-1.76a1.5 1.5 0 0 0 0-2.12l-.35-.35a1.5 1.5 0 0 1 0-1.98Z" />
+      </symbol>
+      <symbol id="i-plug" viewBox="0 0 24 24">
+        <path d="M9 7V4M15 7V4M8 10h8v2a4 4 0 0 1-4 4 4 4 0 0 1-4-4v-2Z" />
+        <path d="M12 16v4" />
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 8v5l3 2" />
+      </symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <path d="M12 3v3M12 18v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M3 12h3M18 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
+        <circle cx="12" cy="12" r="3.5" />
+      </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24">
+        <path d="M20 11a8 8 0 1 0 2 5.3" />
+        <path d="M20 4v7h-7" />
+      </symbol>
+      <symbol id="i-folder-plus" viewBox="0 0 24 24">
+        <path d="M3 7h6l2 2h10v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+        <path d="M12 11v6M9 14h6" />
+      </symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24">
+        <rect x="7" y="7" width="10" height="10" rx="1.5" />
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24">
+        <path d="M12 16V6M8 10l4-4 4 4" />
+        <path d="M5 18h14" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14" />
+      </symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24">
+        <path d="m12 19 0-14" />
+        <path d="m6 11 6-6 6 6" />
+      </symbol>
+    </svg>
     <header class="app-topbar">
       <div class="topbar-drag-region"></div>
       <div class="topbar-left topbar-no-drag">
-        <button id="toggle-left-btn" class="chrome-button" title="Toggle sidebar">☰</button>
-        <button class="chrome-button muted" title="Back">←</button>
-        <button class="chrome-button muted" title="Forward">→</button>
+        <button id="toggle-left-btn" class="chrome-button" title="Toggle sidebar"><svg class="icon-svg"><use href="#i-menu"></use></svg></button>
+        <button class="chrome-button muted" title="Back"><svg class="icon-svg"><use href="#i-chevron-left"></use></svg></button>
+        <button class="chrome-button muted" title="Forward"><svg class="icon-svg"><use href="#i-chevron-right"></use></svg></button>
       </div>
       <div class="topbar-center topbar-no-drag">
         <div id="window-thread-title" class="window-thread-title">No active session</div>
         <div id="window-workspace-title" class="window-workspace-title">hermes-agent</div>
-        <button class="chrome-button small muted" title="More">⋯</button>
+        <button class="chrome-button small muted" title="More"><svg class="icon-svg small"><use href="#i-more"></use></svg></button>
       </div>
       <div class="topbar-right topbar-no-drag">
-        <button class="chrome-button muted" title="Run">▷</button>
+        <button class="chrome-button muted" title="Run"><svg class="icon-svg"><use href="#i-play"></use></svg></button>
         <button class="chrome-pill">提交</button>
-        <button id="toggle-right-btn" class="chrome-button" title="Toggle inspector">⌲</button>
+        <button id="toggle-right-btn" class="chrome-button" title="Toggle inspector"><svg class="icon-svg"><use href="#i-panel-right"></use></svg></button>
       </div>
     </header>
     <div class="app-shell">
       <aside class="rail">
         <div class="rail-top">
           <button id="new-session-btn" class="nav-action">
-            <span class="nav-icon">✎</span>
+            <span class="nav-icon"><svg class="icon-svg"><use href="#i-compose"></use></svg></span>
             <span>新线程</span>
           </button>
-          <button class="nav-item active">
-            <span class="nav-icon">⌕</span>
+          <button id="nav-search" class="nav-item active" data-view="search">
+            <span class="nav-icon"><svg class="icon-svg"><use href="#i-search"></use></svg></span>
             <span>Search</span>
           </button>
-          <button class="nav-item">
-            <span class="nav-icon">⬢</span>
+          <button id="nav-skills" class="nav-item" data-view="skills">
+            <span class="nav-icon"><svg class="icon-svg"><use href="#i-boxes"></use></svg></span>
             <span>技能</span>
           </button>
-          <button class="nav-item muted">
-            <span class="nav-icon">◌</span>
+          <button class="nav-item muted" data-view="plugins">
+            <span class="nav-icon"><svg class="icon-svg"><use href="#i-puzzle"></use></svg></span>
             <span>Plugins</span>
           </button>
-          <button class="nav-item">
-            <span class="nav-icon">◷</span>
+          <button id="nav-automations" class="nav-item" data-view="automations">
+            <span class="nav-icon"><svg class="icon-svg"><use href="#i-clock"></use></svg></span>
             <span>自动化</span>
           </button>
         </div>
@@ -54,8 +128,8 @@
           <div class="rail-section-head">
             <span>线程</span>
             <div class="rail-head-actions">
-              <button id="refresh-sessions-btn" class="icon-button small" title="Refresh">⟳</button>
-              <button id="pick-workspace-btn" class="icon-button small" title="Choose Workspace">⊞</button>
+              <button id="refresh-sessions-btn" class="icon-button small" title="Refresh"><svg class="icon-svg small"><use href="#i-refresh"></use></svg></button>
+              <button id="pick-workspace-btn" class="icon-button small" title="Choose Workspace"><svg class="icon-svg small"><use href="#i-folder-plus"></use></svg></button>
             </div>
           </div>
           <div class="workspace-chip">
@@ -68,7 +142,7 @@
 
         <div class="rail-bottom">
           <button class="nav-item settings-row">
-            <span class="nav-icon">⚙</span>
+            <span class="nav-icon"><svg class="icon-svg"><use href="#i-settings"></use></svg></span>
             <span>设置</span>
           </button>
         </div>
@@ -84,8 +158,8 @@
           </div>
           <div class="toolbar-right">
             <div id="run-state-pill" class="state-pill idle">Idle</div>
-            <button id="stop-btn" class="icon-button" title="Stop">⏹</button>
-            <button class="icon-button" title="Apply later">⇪</button>
+            <button id="stop-btn" class="icon-button" title="Stop"><svg class="icon-svg"><use href="#i-stop"></use></svg></button>
+            <button class="icon-button" title="Apply later"><svg class="icon-svg"><use href="#i-upload"></use></svg></button>
             <button class="branch-pill" type="button">main</button>
           </div>
         </header>
@@ -94,10 +168,15 @@
           <div class="transcript-column">
             <div id="status-banner" class="status-banner">Waiting for Hermes sidecar</div>
             <section id="messages" class="transcript"></section>
+            <section id="mode-panel" class="mode-panel hidden">
+              <div id="mode-panel-label" class="message-label">Workspace Mode</div>
+              <div id="mode-panel-title" class="mode-panel-title">Search</div>
+              <div id="mode-panel-copy" class="mode-panel-copy"></div>
+            </section>
             <section class="composer-wrap">
               <div class="composer">
                 <div class="composer-toolbar">
-                  <button class="composer-tool">＋</button>
+                  <button class="composer-tool"><svg class="icon-svg"><use href="#i-plus"></use></svg></button>
                   <div id="provider-pill" class="composer-pill">sidecar</div>
                   <div id="model-pill" class="composer-pill">model</div>
                   <div id="toolset-pill" class="composer-pill">toolset</div>
@@ -109,7 +188,7 @@
                     <span class="dot">•</span>
                     <span id="session-meta">No session</span>
                   </div>
-                  <button id="send-btn" class="send-button" title="Send">↑</button>
+                  <button id="send-btn" class="send-button" title="Send"><svg class="icon-svg send"><use href="#i-arrow-up"></use></svg></button>
                 </div>
               </div>
               <div class="workspace-footer">
@@ -126,7 +205,10 @@
                 <div id="inspector-title" class="inspector-title">未暂存</div>
                 <div id="inspector-subtitle" class="inspector-subtitle">Changes, files, and active tool detail appear here.</div>
               </div>
-              <button class="icon-button small" title="More">⋯</button>
+              <div class="inspector-header-actions">
+                <button id="open-changes-btn" class="inspector-mode-button" title="Open changes view">Changes</button>
+                <button class="icon-button small" title="More"><svg class="icon-svg small"><use href="#i-more"></use></svg></button>
+              </div>
             </header>
 
             <section id="inspector-empty" class="inspector-empty">
@@ -137,6 +219,57 @@
             <section class="inspector-panel">
               <div class="panel-label">Active Tool Timeline</div>
               <div id="tool-timeline" class="tool-timeline"></div>
+            </section>
+
+            <section id="tool-detail-panel" class="inspector-panel tool-detail-panel hidden">
+              <div class="panel-label">Tool Detail</div>
+              <div class="tool-detail-card">
+                <div id="tool-detail-title" class="tool-detail-title">No tool selected</div>
+                <div id="tool-detail-status" class="tool-detail-status">Idle</div>
+                <div id="tool-detail-preview" class="tool-detail-preview">Select a tool event to inspect it here.</div>
+                <div id="tool-detail-duration" class="tool-detail-meta"></div>
+              </div>
+            </section>
+
+            <section id="approval-panel" class="inspector-panel approval-panel hidden">
+              <div class="panel-label">Approval Context</div>
+              <div class="approval-card">
+                <div id="approval-title" class="tool-detail-title">Approval required</div>
+                <div id="approval-description" class="approval-description">Hermes is waiting for confirmation.</div>
+                <pre id="approval-command" class="approval-command"></pre>
+                <div id="approval-actions" class="approval-actions"></div>
+              </div>
+            </section>
+
+            <section id="clarify-panel" class="inspector-panel clarify-panel hidden">
+              <div class="panel-label">Clarify Context</div>
+              <div class="approval-card">
+                <div id="clarify-title" class="tool-detail-title">Clarification required</div>
+                <div id="clarify-question" class="approval-description">Hermes is waiting for additional input.</div>
+                <div id="clarify-choice-actions" class="approval-actions"></div>
+                <div id="clarify-freeform-wrap" class="clarify-freeform hidden">
+                  <textarea id="clarify-input" placeholder="Reply to Hermes..."></textarea>
+                  <div class="clarify-submit-row">
+                    <button id="clarify-submit-btn" class="approval-action">Submit</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="changes-panel" class="inspector-panel changes-panel hidden">
+              <div class="panel-label">Changes Review</div>
+              <div class="changes-card">
+                <div class="tool-detail-title">No pending changes yet</div>
+                <div class="approval-description">
+                  Hermes has not published changed files or patch artifacts into the desktop client yet.
+                  This reserved mode will become the home for file lists, diffs, and patch review.
+                </div>
+                <div class="changes-placeholder-list">
+                  <div class="changes-placeholder-item">Future: changed file list</div>
+                  <div class="changes-placeholder-item">Future: diff preview</div>
+                  <div class="changes-placeholder-item">Future: patch/apply review flow</div>
+                </div>
+              </div>
             </section>
 
             <section class="inspector-panel settings-panel">

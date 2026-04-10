@@ -148,6 +148,33 @@ Suggested hierarchy:
 - metadata: 12-13px
 - code/file lines: 13-14px mono
 
+## Icon System
+Icons must follow a single coherent family and should never drift into mixed styles.
+
+Rules:
+- use one icon family across the entire desktop client
+- default family: Lucide-style outline icons
+- avoid mixing custom doodle icons, emoji-like symbols, filled glyphs, and unrelated open-source icon families
+- icon weight should stay visually close to the surrounding border and typography weight
+- icons should feel quiet and precise, not decorative
+
+Usage rules:
+- navigation icons: small, restrained, secondary to label text
+- top bar icons: compact and utility-first
+- inspector and composer icons: minimal and operational
+- do not use ornamental icons that do not improve scanning
+
+Sizing guidance:
+- standard shell icon: 18px
+- compact icon: 16px
+- send/action icon may be slightly smaller if the container is visually heavy
+
+Consistency rules:
+- all icons should share the same stroke style
+- keep stroke joins rounded and geometry simple
+- prefer recognizable, boring, product-grade symbols over expressive novelty
+- if a new icon is needed, choose it from the same family before drawing a custom one
+
 ## Color System
 The screenshot is much lighter and more restrained than the current Hermes prototype.
 

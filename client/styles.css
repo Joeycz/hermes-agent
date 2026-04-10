@@ -22,6 +22,13 @@
   --inspector-width: 520px;
 }
 
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -52,6 +59,26 @@ button {
   border: 0;
   background: transparent;
   color: inherit;
+}
+
+svg {
+  display: block;
+}
+
+.icon-svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex: 0 0 auto;
+}
+
+.icon-svg.small {
+  width: 16px;
+  height: 16px;
 }
 
 .app-topbar {
@@ -101,8 +128,8 @@ button {
 }
 
 .chrome-button {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -112,9 +139,8 @@ button {
 }
 
 .chrome-button.small {
-  width: 24px;
-  height: 24px;
-  font-size: 14px;
+  width: 28px;
+  height: 28px;
 }
 
 .chrome-button.muted {
@@ -216,8 +242,17 @@ button {
 
 .nav-icon {
   width: 20px;
-  text-align: center;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-soft);
+  flex: 0 0 auto;
+}
+
+.nav-icon .icon-svg {
+  width: 17px;
+  height: 17px;
 }
 
 .rail-section {
@@ -385,7 +420,6 @@ button {
 .icon-button.small {
   width: 30px;
   height: 30px;
-  font-size: 14px;
 }
 
 .workspace-body {
@@ -422,6 +456,30 @@ button {
   padding: 26px 24px 10px;
 }
 
+.mode-panel.hidden {
+  display: none;
+}
+
+.mode-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 34px 28px 10px;
+}
+
+.mode-panel-title {
+  font-size: 30px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.mode-panel-copy {
+  max-width: 720px;
+  margin-top: 12px;
+  color: var(--text-soft);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
 .document-empty {
   max-width: 720px;
   padding: 18px 0 0;
@@ -442,6 +500,17 @@ button {
 .message {
   max-width: 760px;
   margin-bottom: 24px;
+  border-radius: 16px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.message:hover {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .message-label {
@@ -482,6 +551,11 @@ button {
   color: var(--text-soft);
 }
 
+.message.selected {
+  background: rgba(35, 131, 226, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(35, 131, 226, 0.18);
+}
+
 .composer-wrap {
   padding: 0 18px 16px;
   min-width: 0;
@@ -508,12 +582,15 @@ button {
 }
 
 .composer-tool {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   color: var(--text-soft);
   border: 1px solid var(--border);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .composer textarea {
@@ -555,6 +632,12 @@ button {
   margin-bottom: 10px;
 }
 
+.send-button .icon-svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.1;
+}
+
 .workspace-footer {
   display: flex;
   align-items: center;
@@ -584,6 +667,12 @@ button {
   height: 66px;
   padding: 0 18px 0 22px;
   border-bottom: 1px solid var(--border);
+}
+
+.inspector-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .inspector-title {
@@ -633,6 +722,9 @@ button {
 }
 
 .tool-item {
+  display: block;
+  width: 100%;
+  text-align: left;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -640,6 +732,20 @@ button {
   line-height: 1.5;
   font-size: 13px;
   color: var(--text-soft);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 160ms ease;
+}
+
+.tool-item:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.tool-item.selected {
+  background: rgba(35, 131, 226, 0.08);
+  border-color: rgba(35, 131, 226, 0.24);
 }
 
 .tool-item.running {
@@ -655,6 +761,178 @@ button {
 .tool-item.error {
   border-color: rgba(205, 74, 74, 0.22);
   color: var(--danger);
+}
+
+.tool-detail-panel.hidden {
+  display: none;
+}
+
+.approval-panel.hidden {
+  display: none;
+}
+
+.clarify-panel.hidden {
+  display: none;
+}
+
+.changes-panel.hidden {
+  display: none;
+}
+
+.tool-detail-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14px 14px 12px;
+}
+
+.tool-detail-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tool-detail-status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-soft);
+  text-transform: capitalize;
+}
+
+.tool-detail-preview {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tool-detail-meta {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.approval-card {
+  border: 1px solid rgba(205, 74, 74, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 251, 250, 0.96);
+  padding: 14px;
+}
+
+.approval-description {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+
+.approval-command {
+  margin: 12px 0 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.9);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.approval-action {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.94);
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.approval-action.deny {
+  color: var(--danger);
+  border-color: rgba(205, 74, 74, 0.22);
+}
+
+.inspector-mode-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.inspector-mode-button.active {
+  background: rgba(35, 131, 226, 0.08);
+  border-color: rgba(35, 131, 226, 0.22);
+  color: var(--accent);
+}
+
+.clarify-freeform.hidden {
+  display: none;
+}
+
+.clarify-freeform {
+  margin-top: 14px;
+}
+
+.clarify-freeform textarea {
+  width: 100%;
+  min-height: 108px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  resize: vertical;
+}
+
+.clarify-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.changes-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14px;
+}
+
+.changes-placeholder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.changes-placeholder-item {
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-faint);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .settings-panel {

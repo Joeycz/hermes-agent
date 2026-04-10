@@ -11,6 +11,12 @@ const state = {
   busy: false,
   leftCollapsed: false,
   rightCollapsed: false,
+  selectedTranscriptItemId: null,
+  selectedTranscriptItemType: null,
+  inspectorMode: 'empty',
+  selectedToolId: null,
+  pinnedInspectorMode: null,
+  activeView: 'thread',
 };
 
 const els = {
@@ -25,6 +31,10 @@ const els = {
   windowWorkspaceTitle: document.getElementById('window-workspace-title'),
   sessionsList: document.getElementById('sessions-list'),
   messages: document.getElementById('messages'),
+  modePanel: document.getElementById('mode-panel'),
+  modePanelLabel: document.getElementById('mode-panel-label'),
+  modePanelTitle: document.getElementById('mode-panel-title'),
+  modePanelCopy: document.getElementById('mode-panel-copy'),
   toolTimeline: document.getElementById('tool-timeline'),
   promptInput: document.getElementById('prompt-input'),
   modelInput: document.getElementById('model-input'),
@@ -39,6 +49,25 @@ const els = {
   inspectorTitle: document.getElementById('inspector-title'),
   inspectorSubtitle: document.getElementById('inspector-subtitle'),
   inspectorEmpty: document.getElementById('inspector-empty'),
+  openChangesBtn: document.getElementById('open-changes-btn'),
+  toolDetailPanel: document.getElementById('tool-detail-panel'),
+  toolDetailTitle: document.getElementById('tool-detail-title'),
+  toolDetailStatus: document.getElementById('tool-detail-status'),
+  toolDetailPreview: document.getElementById('tool-detail-preview'),
+  toolDetailDuration: document.getElementById('tool-detail-duration'),
+  approvalPanel: document.getElementById('approval-panel'),
+  approvalTitle: document.getElementById('approval-title'),
+  approvalDescription: document.getElementById('approval-description'),
+  approvalCommand: document.getElementById('approval-command'),
+  approvalActions: document.getElementById('approval-actions'),
+  clarifyPanel: document.getElementById('clarify-panel'),
+  clarifyTitle: document.getElementById('clarify-title'),
+  clarifyQuestion: document.getElementById('clarify-question'),
+  clarifyChoiceActions: document.getElementById('clarify-choice-actions'),
+  clarifyFreeformWrap: document.getElementById('clarify-freeform-wrap'),
+  clarifyInput: document.getElementById('clarify-input'),
+  clarifySubmitBtn: document.getElementById('clarify-submit-btn'),
+  changesPanel: document.getElementById('changes-panel'),
   modalBackdrop: document.getElementById('modal-backdrop'),
   modalTitle: document.getElementById('modal-title'),
   modalBody: document.getElementById('modal-body'),
@@ -68,6 +97,11 @@ function bindUI() {
   document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
   document.getElementById('toggle-left-btn').addEventListener('click', toggleLeftSidebar);
   document.getElementById('toggle-right-btn').addEventListener('click', toggleRightSidebar);
+  els.clarifySubmitBtn.addEventListener('click', submitClarifyFromInspector);
+  els.openChangesBtn.addEventListener('click', toggleChangesMode);
+  document.getElementById('nav-search').addEventListener('click', () => setActiveView('search'));
+  document.getElementById('nav-skills').addEventListener('click', () => setActiveView('skills'));
+  document.getElementById('nav-automations').addEventListener('click', () => setActiveView('automations'));
 }
 
 async function chooseWorkspace() {
@@ -103,12 +137,14 @@ async function createSession() {
     model: state.settings?.model || '',
     toolsets: state.settings?.toolsets || [],
   });
+  state.activeView = 'thread';
   activateSession(response);
   await refreshSessions();
 }
 
 async function resumeSession(sessionId) {
   const response = await window.hermesDesktop.command('session.resume', { session_id: sessionId });
+  state.activeView = 'thread';
   activateSession(response);
 }
 
@@ -172,6 +208,10 @@ function activateSession(session) {
   state.streamingText = '';
   state.tools = [];
   state.busy = Boolean(session.busy);
+  state.selectedTranscriptItemId = null;
+  state.selectedTranscriptItemType = null;
+  state.selectedToolId = null;
+  state.pinnedInspectorMode = null;
   renderWorkspace();
   renderMessages();
   renderTools();
@@ -180,6 +220,7 @@ function activateSession(session) {
   renderRunState();
   renderStatus(session.busy ? 'Running Hermes...' : 'Session ready');
   syncWindowHeader();
+  renderActiveView();
 }
 
 function handleRuntimeEvent(message) {
@@ -276,14 +317,20 @@ function updateToolTimeline(type, payload) {
   const existing = state.tools.find((tool) => tool.id === payload.tool_name && tool.status === 'running');
   if (type === 'tool.started') {
     state.tools.unshift({
-      id: payload.tool_name,
+      id: `${payload.tool_name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      toolName: payload.tool_name,
       preview: payload.preview || payload.tool_name,
       status: 'running',
       duration: null,
+      args: payload.args || null,
+      resultSummary: null,
+      errorSummary: null,
     });
   } else if (existing) {
     existing.status = payload.is_error ? 'error' : 'done';
     existing.duration = payload.duration || null;
+    existing.resultSummary = payload.is_error ? null : `${existing.preview} completed`;
+    existing.errorSummary = payload.is_error ? `${existing.preview} failed` : null;
   }
   renderTools();
   renderInspector();
@@ -374,6 +421,7 @@ function hideModal() {
   els.modalBody.textContent = '';
   state.pendingApproval = null;
   state.pendingClarify = null;
+  syncInspectorMode();
 }
 
 function renderWorkspace() {
@@ -423,10 +471,15 @@ function renderSessions() {
 }
 
 function renderMessages() {
+  renderActiveView();
+  if (state.activeView !== 'thread') {
+    els.messages.innerHTML = '';
+    return;
+  }
   els.messages.innerHTML = '';
   const combined = [...state.messages];
   if (state.streamingText) {
-    combined.push({ role: 'assistant', content: state.streamingText });
+    combined.push({ role: 'assistant', content: state.streamingText, streaming: true });
   }
 
   if (combined.length === 0) {
@@ -439,9 +492,16 @@ function renderMessages() {
     els.messages.appendChild(empty);
   }
 
-  for (const msg of combined) {
+  for (const [index, msg] of combined.entries()) {
+    const itemId = buildTranscriptItemId(msg, index);
     const block = document.createElement('article');
     block.className = `message ${msg.role}`;
+    block.dataset.itemId = itemId;
+    block.dataset.itemType = msg.role;
+    if (state.selectedTranscriptItemId === itemId) {
+      block.classList.add('selected');
+    }
+    block.addEventListener('click', () => selectTranscriptItem(itemId, msg.role));
 
     const label = document.createElement('div');
     label.className = 'message-label';
@@ -475,33 +535,71 @@ function renderTools() {
     return;
   }
   for (const tool of state.tools) {
-    const el = document.createElement('div');
+    const el = document.createElement('button');
     el.className = `tool-item ${tool.status}`;
+    if (state.selectedToolId === tool.id) {
+      el.classList.add('selected');
+    }
     el.textContent = tool.duration
       ? `${tool.preview} • ${tool.status} • ${tool.duration.toFixed(1)}s`
       : `${tool.preview} • ${tool.status}`;
+    el.addEventListener('click', () => selectTool(tool.id));
     els.toolTimeline.appendChild(el);
   }
 }
 
 function renderInspector() {
-  const hasChanges = state.tools.length > 0 || state.pendingApproval || state.pendingClarify;
-  els.inspectorEmpty.style.display = hasChanges ? 'none' : 'flex';
+  syncInspectorMode();
+  els.inspectorEmpty.style.display = state.inspectorMode === 'empty' ? 'flex' : 'none';
+  els.toolDetailPanel.classList.toggle('hidden', state.inspectorMode !== 'tool_detail');
+  els.approvalPanel.classList.toggle('hidden', state.inspectorMode !== 'approval');
+  els.clarifyPanel.classList.toggle('hidden', state.inspectorMode !== 'clarify');
+  els.changesPanel.classList.toggle('hidden', state.inspectorMode !== 'changes_placeholder');
+  els.openChangesBtn.classList.toggle('active', state.inspectorMode === 'changes_placeholder');
 
-  if (state.pendingApproval) {
+  if (state.inspectorMode === 'approval') {
     els.inspectorTitle.textContent = 'Approval required';
     els.inspectorSubtitle.textContent = 'Hermes is waiting for confirmation before running a guarded command.';
+    renderApprovalPanel();
     return;
   }
-  if (state.pendingClarify) {
+  if (state.inspectorMode === 'clarify') {
     els.inspectorTitle.textContent = 'Clarification required';
     els.inspectorSubtitle.textContent = 'Hermes is waiting for additional input to continue the turn.';
+    renderClarifyPanel();
     return;
   }
-  if (state.tools.length > 0) {
+  if (state.inspectorMode === 'transcript_selection') {
+    const selectedMessage = findSelectedTranscriptMessage();
+    if (selectedMessage) {
+      els.inspectorTitle.textContent = selectedMessage.role === 'tool' ? 'Selected tool output' : 'Selected transcript block';
+      els.inspectorSubtitle.textContent = summarizeContent(selectedMessage.content);
+      return;
+    }
+  }
+  if (state.inspectorMode === 'tool_timeline') {
     const latest = state.tools[0];
     els.inspectorTitle.textContent = latest.status === 'running' ? 'Active tool' : 'Recent tool output';
     els.inspectorSubtitle.textContent = latest.preview;
+    return;
+  }
+  if (state.inspectorMode === 'tool_detail') {
+    const selectedTool = findSelectedTool();
+    if (selectedTool) {
+      els.inspectorTitle.textContent = 'Tool detail';
+      els.inspectorSubtitle.textContent = selectedTool.toolName || selectedTool.preview;
+      els.toolDetailTitle.textContent = selectedTool.toolName || selectedTool.preview;
+      els.toolDetailStatus.textContent = selectedTool.status;
+      els.toolDetailPreview.textContent = selectedTool.preview || 'No preview available';
+      els.toolDetailDuration.textContent = selectedTool.duration
+        ? `Duration: ${selectedTool.duration.toFixed(1)}s`
+        : 'Duration: in progress';
+      return;
+    }
+  }
+  if (state.inspectorMode === 'changes_placeholder') {
+    els.inspectorTitle.textContent = '未暂存';
+    els.inspectorSubtitle.textContent = 'This reserved inspector mode will later show changed files, diffs, and patch review states.';
     return;
   }
   els.inspectorTitle.textContent = '未暂存';
@@ -520,6 +618,62 @@ function renderSettings() {
   els.toolsetPill.textContent = (state.settings.toolsets || []).join(', ') || 'toolsets';
   els.providerPill.textContent = state.settings.approvals_mode || 'manual';
   els.footerBranch.textContent = 'branch: main';
+}
+
+function setActiveView(view) {
+  state.activeView = view;
+  if (view !== 'thread') {
+    state.selectedTranscriptItemId = null;
+    state.selectedTranscriptItemType = null;
+    state.selectedToolId = null;
+    state.pinnedInspectorMode = null;
+  }
+  renderActiveView();
+  renderMessages();
+  renderInspector();
+  renderNavState();
+}
+
+function renderActiveView() {
+  const isThreadView = state.activeView === 'thread';
+  els.modePanel.classList.toggle('hidden', isThreadView);
+  els.messages.style.display = isThreadView ? 'block' : 'none';
+
+  if (isThreadView) {
+    return;
+  }
+
+  const copyByView = {
+    search: {
+      title: 'Search',
+      copy: 'This view will surface Hermes session recall, memory-aware search, and thread lookup. Phase 2 will connect this workspace to session_search and cross-thread navigation.',
+    },
+    skills: {
+      title: 'Skills',
+      copy: 'This view will become the Skills surface for browsing installed skills, understanding their scope, and activating them inside the current thread without dropping to the CLI.',
+    },
+    automations: {
+      title: 'Automations',
+      copy: 'This view will become the operations surface for Hermes cron jobs, delivery targets, attached skills, and recent run results.',
+    },
+  };
+
+  const config = copyByView[state.activeView] || {
+    title: 'Workspace',
+    copy: 'This workspace mode is not yet implemented.',
+  };
+
+  els.modePanelLabel.textContent = 'Workspace Mode';
+  els.modePanelTitle.textContent = config.title;
+  els.modePanelCopy.textContent = config.copy;
+}
+
+function renderNavState() {
+  const buttons = document.querySelectorAll('.rail-top [data-view]');
+  buttons.forEach((button) => {
+    const isActive = button.dataset.view === state.activeView;
+    button.classList.toggle('active', isActive);
+  });
 }
 
 function toggleLeftSidebar() {
@@ -541,9 +695,10 @@ function syncWindowHeader() {
 function normalizeMessages(messages) {
   return (messages || [])
     .filter((msg) => ['user', 'assistant', 'tool'].includes(msg.role))
-    .map((msg) => ({
+    .map((msg, index) => ({
       role: msg.role,
       content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content || ''),
+      itemId: msg.itemId || `${msg.role}-${index}-${hashString(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content || ''))}`,
     }));
 }
 
@@ -559,6 +714,198 @@ function roleLabel(role) {
   if (role === 'assistant') return 'Hermes';
   if (role === 'tool') return 'System';
   return role;
+}
+
+function selectTranscriptItem(itemId, itemType) {
+  if (state.selectedTranscriptItemId === itemId) {
+    state.selectedTranscriptItemId = null;
+    state.selectedTranscriptItemType = null;
+  } else {
+    state.selectedTranscriptItemId = itemId;
+    state.selectedTranscriptItemType = itemType;
+    state.selectedToolId = null;
+  }
+  state.pinnedInspectorMode = null;
+  syncInspectorMode();
+  renderMessages();
+  renderInspector();
+}
+
+function selectTool(toolId) {
+  if (state.selectedToolId === toolId) {
+    state.selectedToolId = null;
+  } else {
+    state.selectedToolId = toolId;
+    state.selectedTranscriptItemId = null;
+    state.selectedTranscriptItemType = null;
+  }
+  state.pinnedInspectorMode = null;
+  syncInspectorMode();
+  renderTools();
+  renderMessages();
+  renderInspector();
+}
+
+function toggleChangesMode() {
+  if (state.pinnedInspectorMode === 'changes_placeholder') {
+    state.pinnedInspectorMode = null;
+  } else {
+    state.pinnedInspectorMode = 'changes_placeholder';
+    state.selectedTranscriptItemId = null;
+    state.selectedTranscriptItemType = null;
+    state.selectedToolId = null;
+  }
+  syncInspectorMode();
+  renderMessages();
+  renderTools();
+  renderInspector();
+}
+
+function findSelectedTranscriptMessage() {
+  const combined = [...state.messages];
+  if (state.streamingText) {
+    combined.push({ role: 'assistant', content: state.streamingText, itemId: 'assistant-streaming' });
+  }
+  return combined.find((msg, index) => buildTranscriptItemId(msg, index) === state.selectedTranscriptItemId) || null;
+}
+
+function findSelectedTool() {
+  return state.tools.find((tool) => tool.id === state.selectedToolId) || null;
+}
+
+function renderApprovalPanel() {
+  if (!state.pendingApproval) {
+    els.approvalTitle.textContent = 'Approval required';
+    els.approvalDescription.textContent = 'Hermes is waiting for confirmation.';
+    els.approvalCommand.textContent = '';
+    els.approvalActions.innerHTML = '';
+    return;
+  }
+
+  els.approvalTitle.textContent = 'Approval required';
+  els.approvalDescription.textContent = state.pendingApproval.description || 'Hermes is waiting for confirmation before it can continue.';
+  els.approvalCommand.textContent = state.pendingApproval.command || '';
+  els.approvalActions.innerHTML = '';
+
+  const choices = state.pendingApproval.choices || ['once', 'session', 'always', 'deny'];
+  for (const choice of choices) {
+    const button = document.createElement('button');
+    button.className = `approval-action${choice === 'deny' ? ' deny' : ''}`;
+    button.textContent = choice;
+    button.addEventListener('click', async () => {
+      await window.hermesDesktop.command('approval.resolve', {
+        session_id: state.pendingApproval.session_id,
+        prompt_id: state.pendingApproval.prompt_id,
+        choice,
+      });
+      hideModal();
+    });
+    els.approvalActions.appendChild(button);
+  }
+}
+
+function renderClarifyPanel() {
+  if (!state.pendingClarify) {
+    els.clarifyTitle.textContent = 'Clarification required';
+    els.clarifyQuestion.textContent = 'Hermes is waiting for additional input.';
+    els.clarifyChoiceActions.innerHTML = '';
+    els.clarifyInput.value = '';
+    els.clarifyFreeformWrap.classList.add('hidden');
+    return;
+  }
+
+  const choices = state.pendingClarify.choices || [];
+  const useFreeform = choices.length === 0 || (choices.length === 1 && choices[0] === 'Submit');
+
+  els.clarifyTitle.textContent = 'Clarification required';
+  els.clarifyQuestion.textContent = state.pendingClarify.question || 'Hermes is waiting for additional input.';
+  els.clarifyChoiceActions.innerHTML = '';
+
+  if (useFreeform) {
+    els.clarifyFreeformWrap.classList.remove('hidden');
+  } else {
+    els.clarifyFreeformWrap.classList.add('hidden');
+    for (const choice of choices) {
+      const button = document.createElement('button');
+      button.className = 'approval-action';
+      button.textContent = choice;
+      button.addEventListener('click', async () => {
+        await submitClarifyAnswer(choice);
+      });
+      els.clarifyChoiceActions.appendChild(button);
+    }
+  }
+}
+
+async function submitClarifyFromInspector() {
+  await submitClarifyAnswer(els.clarifyInput.value);
+}
+
+async function submitClarifyAnswer(answer) {
+  if (!state.pendingClarify) {
+    return;
+  }
+  await window.hermesDesktop.command('clarify.resolve', {
+    session_id: state.pendingClarify.session_id,
+    prompt_id: state.pendingClarify.prompt_id,
+    answer,
+  });
+  hideModal();
+}
+
+function buildTranscriptItemId(msg, index) {
+  if (msg.itemId) {
+    return msg.itemId;
+  }
+  if (msg.streaming) {
+    return 'assistant-streaming';
+  }
+  return `${msg.role}-${index}-${hashString(msg.content || '')}`;
+}
+
+function summarizeContent(content) {
+  const text = String(content || '').replace(/\s+/g, ' ').trim();
+  if (!text) {
+    return 'Empty block';
+  }
+  return text.length > 120 ? `${text.slice(0, 120)}...` : text;
+}
+
+function syncInspectorMode() {
+  if (state.pendingApproval) {
+    state.inspectorMode = 'approval';
+    return;
+  }
+  if (state.pendingClarify) {
+    state.inspectorMode = 'clarify';
+    return;
+  }
+  if (state.selectedToolId) {
+    state.inspectorMode = 'tool_detail';
+    return;
+  }
+  if (state.selectedTranscriptItemId) {
+    state.inspectorMode = 'transcript_selection';
+    return;
+  }
+  if (state.pinnedInspectorMode === 'changes_placeholder') {
+    state.inspectorMode = 'changes_placeholder';
+    return;
+  }
+  if (state.tools.length > 0) {
+    state.inspectorMode = 'tool_timeline';
+    return;
+  }
+  state.inspectorMode = 'empty';
+}
+
+function hashString(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
 }
 
 boot().catch((error) => {
