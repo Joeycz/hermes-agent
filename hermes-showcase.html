@@ -1,0 +1,2119 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hermes Agent Web PPT</title>
+    <meta
+      name="description"
+      content="一份关于 Hermes Agent 的网页版 PPT：从 OpenClaw 迁移、三层框架、记忆系统、技能系统、委派执行、Web UI、社区口碑到实战建议。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
+    <style>
+      :root {
+        --bg: #04050a;
+        --panel: rgba(10, 13, 24, 0.72);
+        --panel-strong: rgba(12, 17, 30, 0.9);
+        --line: rgba(255, 190, 90, 0.16);
+        --line-strong: rgba(255, 190, 90, 0.34);
+        --text: #f6efe7;
+        --muted: #b8afa2;
+        --accent: #ffbe57;
+        --accent-2: #ff7d4d;
+        --accent-3: #ffe0b0;
+        --shadow: 0 30px 90px rgba(0, 0, 0, 0.42);
+        --content: min(1240px, calc(100vw - 56px));
+        --radius-xl: 34px;
+        --radius-lg: 24px;
+        --radius-md: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top, rgba(255, 176, 77, 0.14), transparent 24%),
+          linear-gradient(180deg, #090b12 0%, #04050a 55%, #030409 100%);
+        color: var(--text);
+        font-family: "Noto Sans SC", sans-serif;
+      }
+
+      body {
+        position: relative;
+        touch-action: pan-x;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      strong {
+        color: #fff4df;
+      }
+
+      #scene {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.96;
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(circle at 20% 20%, rgba(255, 124, 68, 0.08), transparent 26%),
+          radial-gradient(circle at 80% 70%, rgba(255, 195, 89, 0.08), transparent 30%);
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .chrome {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 10;
+        padding: 18px 28px 0;
+        pointer-events: none;
+      }
+
+      .chrome__inner {
+        width: var(--content);
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .brand,
+      .counter,
+      .hint,
+      .eyebrow,
+      .mini-label,
+      .meta-pill {
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(8, 11, 18, 0.42);
+        backdrop-filter: blur(10px);
+        pointer-events: auto;
+      }
+
+      .brand__eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(255, 190, 87, 0.72);
+      }
+
+      .brand__title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+
+      .chrome__right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .counter,
+      .hint {
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(8, 11, 18, 0.42);
+        backdrop-filter: blur(10px);
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .deck-shell {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        height: 100%;
+      }
+
+      .swiper {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .swiper-slide {
+        width: 100%;
+        height: 100%;
+      }
+
+      .slide {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 64px 16px 16px;
+      }
+
+      .slide__inner {
+        width: 100%;
+        height: calc(100vh - 96px);
+        border-radius: 38px;
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(160deg, rgba(16, 22, 38, 0.86), rgba(6, 8, 16, 0.72));
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+        padding: 24px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .slide__inner::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at top right, rgba(255, 125, 77, 0.12), transparent 28%),
+          radial-gradient(circle at bottom left, rgba(255, 196, 96, 0.1), transparent 30%);
+        pointer-events: none;
+      }
+
+      .slide__content {
+        position: relative;
+        z-index: 1;
+        height: 100%;
+        display: grid;
+        align-content: start;
+        gap: 14px;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: var(--accent);
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-family: "Space Grotesk", sans-serif;
+        letter-spacing: -0.05em;
+      }
+
+      .title-xl {
+        max-width: 11ch;
+        font-size: clamp(52px, 8vw, 96px);
+        line-height: 0.92;
+      }
+
+      .title-lg {
+        max-width: 15ch;
+        font-size: clamp(38px, 5.5vw, 68px);
+        line-height: 0.95;
+      }
+
+      .lead {
+        max-width: 58ch;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.75;
+      }
+
+      .hero-grid,
+      .split-grid,
+      .triple-grid,
+      .quad-grid,
+      .advice-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1.15fr 0.85fr;
+        align-items: start;
+      }
+
+      .split-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .triple-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .quad-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .advice-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .panel,
+      .card,
+      .step,
+      .quote,
+      .metric,
+      .chart,
+      .timeline-item {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(10, 14, 24, 0.76);
+      }
+
+      .panel,
+      .card,
+      .step,
+      .quote,
+      .chart,
+      .timeline-item {
+        padding: 18px;
+      }
+
+      .panel::after,
+      .card::after,
+      .step::after,
+      .quote::after,
+      .chart::after,
+      .timeline-item::after {
+        content: "";
+        position: absolute;
+        right: -18%;
+        bottom: -40%;
+        width: 220px;
+        height: 180px;
+        background: radial-gradient(circle, rgba(255, 125, 77, 0.16), transparent 70%);
+        pointer-events: none;
+      }
+
+      .mini-label {
+        display: inline-block;
+        margin-bottom: 10px;
+        color: var(--accent);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .panel h3,
+      .card h3,
+      .step h3,
+      .quote h3,
+      .chart h3,
+      .timeline-item h3 {
+        font-size: 23px;
+      }
+
+      .panel p,
+      .card p,
+      .step p,
+      .quote p,
+      .chart p,
+      .timeline-item p,
+      li {
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 15px;
+      }
+
+      .hero-actions,
+      .chip-row,
+      .footer-actions,
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 18px;
+        border-radius: 999px;
+        font-weight: 600;
+        transition: 0.2s ease;
+      }
+
+      .button--primary {
+        color: #23160d;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      }
+
+      .button--ghost {
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+      }
+
+      .chip,
+      .meta-pill {
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        font-size: 14px;
+        color: #eadfce;
+      }
+
+      .meta-pill {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .metric-stack {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .metric {
+        padding: 18px;
+      }
+
+      .metric__value {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 34px;
+        font-weight: 700;
+      }
+
+      .metric__label {
+        margin-top: 6px;
+        font-family: "IBM Plex Mono", monospace;
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .list-clean {
+        list-style: none;
+        margin: 14px 0 0;
+        padding: 0;
+      }
+
+      .list-clean li {
+        position: relative;
+        padding-left: 18px;
+        margin-top: 10px;
+      }
+
+      .list-clean li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 11px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 18px rgba(255, 190, 87, 0.45);
+      }
+
+      .step code {
+        display: block;
+        margin: 14px 0 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(255, 190, 87, 0.08);
+        color: var(--accent-3);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 14px;
+        line-height: 1.7;
+        word-break: break-all;
+      }
+
+      .quote blockquote {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.7;
+        color: #fff2d8;
+      }
+
+      .quote cite {
+        display: block;
+        margin-top: 12px;
+        color: var(--muted);
+        font-style: normal;
+      }
+
+      .quote--compact {
+        padding: 16px;
+      }
+
+      .quote--compact blockquote {
+        font-size: 18px;
+        line-height: 1.55;
+      }
+
+      .quote--compact cite {
+        margin-top: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .chart table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      .chart th,
+      .chart td {
+        text-align: left;
+        vertical-align: top;
+        padding: 10px 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .chart th {
+        color: #fff0d2;
+        font-weight: 600;
+      }
+
+      .chart--compact {
+        padding: 16px;
+      }
+
+      .chart--compact th,
+      .chart--compact td {
+        padding: 8px 6px;
+        font-size: 13px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 96px 1fr;
+        gap: 12px;
+      }
+
+      .timeline-item__index {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        color: #23160d;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 20px;
+        font-weight: 600;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      }
+
+      .footnote {
+        color: rgba(255, 255, 255, 0.42);
+        font-size: 13px;
+      }
+
+      .code-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .arch-diagram {
+        display: grid;
+        gap: 16px;
+        margin-top: 22px;
+      }
+
+      .arch-intro-slide .title-lg {
+        max-width: 13ch;
+        font-size: clamp(30px, 5vw, 58px);
+        line-height: 0.98;
+      }
+
+      .arch-intro-slide .lead {
+        max-width: 46ch;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-top: 10px;
+      }
+
+      .arch-intro-slide .arch-diagram {
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .arch-intro-slide .arch-row {
+        gap: 10px;
+      }
+
+      .arch-row {
+        display: grid;
+        gap: 14px;
+      }
+
+      .arch-row--top {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .arch-row--mid {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+
+      .arch-row--bottom {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .arch-box {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(10, 14, 24, 0.76);
+        padding: 18px;
+      }
+
+      .arch-box--compact {
+        padding: 14px;
+      }
+
+      .arch-box--compact .arch-title {
+        font-size: 20px;
+      }
+
+      .arch-box--compact .arch-text {
+        margin-top: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .arch-box--compact .arch-pill-row {
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .arch-box--compact .arch-pill {
+        padding: 6px 8px;
+        font-size: 10px;
+      }
+
+      .arch-box::after {
+        content: "";
+        position: absolute;
+        right: -18%;
+        bottom: -40%;
+        width: 180px;
+        height: 120px;
+        background: radial-gradient(circle, rgba(255, 125, 77, 0.16), transparent 70%);
+        pointer-events: none;
+      }
+
+      .arch-title {
+        margin-top: 6px;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 24px;
+        letter-spacing: -0.04em;
+      }
+
+      .arch-text {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .arch-pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .arch-pill {
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(255, 190, 87, 0.08);
+        border: 1px solid rgba(255, 190, 87, 0.14);
+        color: var(--accent-3);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+
+      .loop-layout {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .loop-board {
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(10, 14, 24, 0.76);
+        padding: 20px;
+      }
+
+      .loop-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .loop-node {
+        position: relative;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 16px;
+      }
+
+      .loop-node h3 {
+        font-size: 22px;
+      }
+
+      .loop-node p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .loop-node::after {
+        content: attr(data-flow);
+        position: absolute;
+        right: 12px;
+        bottom: 10px;
+        color: rgba(255, 190, 87, 0.8);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 18px;
+      }
+
+      .loop-summary {
+        margin-top: 14px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 190, 87, 0.08);
+        border: 1px solid rgba(255, 190, 87, 0.12);
+        color: #ffe5bd;
+        line-height: 1.65;
+      }
+
+      .code-panel--compact {
+        padding: 16px;
+      }
+
+      .code-panel--compact pre {
+        margin-top: 10px;
+        padding: 12px;
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .code-panel {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+          rgba(10, 14, 24, 0.76);
+        padding: 18px;
+      }
+
+      .code-panel pre {
+        margin: 12px 0 0;
+        padding: 14px;
+        border-radius: 16px;
+        background: rgba(255, 190, 87, 0.08);
+        color: var(--accent-3);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .nav-buttons {
+        position: fixed;
+        right: 28px;
+        bottom: 28px;
+        z-index: 12;
+        display: flex;
+        gap: 12px;
+      }
+
+      .nav-buttons button {
+        width: 56px;
+        height: 56px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        background: rgba(8, 11, 18, 0.52);
+        backdrop-filter: blur(10px);
+        color: var(--text);
+        font-size: 18px;
+        cursor: pointer;
+        transition: 0.2s ease;
+      }
+
+      .nav-buttons button:hover {
+        border-color: var(--line-strong);
+        background: rgba(255, 190, 87, 0.08);
+      }
+
+      .swiper-pagination {
+        bottom: 22px !important;
+      }
+
+      .swiper-pagination-bullet {
+        width: 9px;
+        height: 9px;
+        background: rgba(255, 255, 255, 0.32);
+        opacity: 1;
+      }
+
+      .swiper-pagination-bullet-active {
+        background: var(--accent);
+        box-shadow: 0 0 20px rgba(255, 190, 87, 0.4);
+      }
+
+      @media (max-width: 1160px) {
+        .hero-grid,
+        .split-grid,
+        .triple-grid,
+        .quad-grid,
+        .advice-grid,
+        .metric-stack,
+        .code-grid,
+        .loop-layout,
+        .arch-row--top,
+        .arch-row--mid,
+        .arch-row--bottom,
+        .timeline-item {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        :root {
+          --content: calc(100vw - 24px);
+        }
+
+        .chrome {
+          padding: 12px 12px 0;
+        }
+
+        .chrome__inner {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .hint {
+          display: none;
+        }
+
+        .slide {
+          padding: 82px 10px 10px;
+        }
+
+        .slide__inner {
+          padding: 16px;
+          height: calc(100vh - 96px);
+        }
+
+        .title-xl {
+          font-size: clamp(40px, 14vw, 72px);
+        }
+
+        .title-lg {
+          font-size: clamp(32px, 10vw, 52px);
+        }
+
+        .lead {
+          font-size: 15px;
+        }
+
+        .nav-buttons {
+          right: 12px;
+          bottom: 12px;
+        }
+
+        .nav-buttons button {
+          width: 48px;
+          height: 48px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <div class="overlay"></div>
+
+    <div class="chrome">
+      <div class="chrome__inner">
+        <div class="brand">
+          <span class="brand__eyebrow">Essay To Presentation</span>
+          <span class="brand__title">Hermes Agent</span>
+        </div>
+        <div class="chrome__right">
+          <div class="counter"><span id="currentSlide">01</span> / 21</div>
+          <div class="hint">Mouse Wheel / Arrow Keys / Swipe</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="deck-shell">
+      <div class="swiper">
+        <div class="swiper-wrapper">
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content hero-grid">
+                  <div>
+                    <p class="eyebrow">Opening Thesis</p>
+                    <h1 class="title-xl">真正重要的，不是 Agent 会不会调工具，而是它能不能在时间里成长。</h1>
+                    <p class="lead">
+                      真正值得重视的，不是工具数量本身，而是 Agent 首次从一次性会话推进成了一个带时间维度的持续系统。它开始积累经验、修正方法、沉淀偏好，逐渐成为长期认知延展层。
+                    </p>
+                    <div class="chip-row" style="margin-top: 28px;">
+                      <span class="chip">Persistent</span>
+                      <span class="chip">Self-improving</span>
+                      <span class="chip">Stateful</span>
+                      <span class="chip">Grows With You</span>
+                    </div>
+                    <div class="hero-actions" style="margin-top: 24px;">
+                      <a class="button button--primary" href="https://github.com/NousResearch/hermes-agent" target="_blank" rel="noreferrer">GitHub</a>
+                      <a class="button button--ghost" href="https://hermes-agent.nousresearch.com/docs/" target="_blank" rel="noreferrer">Docs</a>
+                    </div>
+                  </div>
+                  <div class="split-grid">
+                    <div class="quote">
+                      <div class="mini-label">Teknium</div>
+                      <blockquote>
+                        “A very good blend between coding agents like Claude Code and generalist agents like Clawdbot.”
+                      </blockquote>
+                      <cite>@Teknium</cite>
+                    </div>
+                    <div class="quote">
+                      <div class="mini-label">Nous Research</div>
+                      <blockquote>
+                        “Meet Hermes Agent, the open source agent that grows with you.”
+                      </blockquote>
+                      <cite>@NousResearch</cite>
+                    </div>
+                    <div class="panel" style="grid-column: 1 / -1;">
+                      <div class="mini-label">Core Reframe</div>
+                      <h3>Hermes 不是“更像某个竞品”的 Agent，而是“更像系统”的 Agent。</h3>
+                      <p>
+                        如果只看模型强弱、UI 顺滑度、工具数量，你看到的只是表层。Hermes 真正值得讨论的，是它把 Agent 做成一种像协议一样有状态、像账户一样有历史、像操作系统一样能长期运行的基础设施。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Interpretation Layer</p>
+                  <h2 class="title-lg">blocmates 的价值，不是夸 Hermes，而是给了它一个可理解框架。</h2>
+                  <p class="lead">
+                    最聪明的解读不是说 Hermes “很强”，而是把它解释成一个 persistent、self-hosted、越用越聪明的系统，并用一个很适合社区理解的框架组织起来：Knowledge Layer、Execution Layer、Output Layer。
+                  </p>
+                  <div class="chart" style="margin-top: 22px;">
+                    <div class="mini-label">Chart 2</div>
+                    <h3>blocmates 三层框架</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>层级</th>
+                          <th>对应能力</th>
+                          <th>改变</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Knowledge Layer</td>
+                          <td>内建 memory、会话搜索、skills、可选 Honcho</td>
+                          <td>Agent 不再只是临时聪明，而是能积累认知</td>
+                        </tr>
+                        <tr>
+                          <td>Execution Layer</td>
+                          <td>child agents、工具系统、MCP、persistent access</td>
+                          <td>Agent 不只会回答，还能拆解、并行、执行</td>
+                        </tr>
+                        <tr>
+                          <td>Output Layer</td>
+                          <td>cron、gateway、Slack / Discord / Telegram、Web UI</td>
+                          <td>结果进入工作流，而不只停在对话框</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Interpretation Layer</p>
+                  <h2 class="title-lg">这套三层框架的重要性，在于它把 Hermes 讲成了一个生产力栈。</h2>
+                  <p class="lead">
+                    它不再像功能列表，而像一套能形成复利飞轮的系统：认知会积累，执行会编排，输出会回到工作流。
+                  </p>
+                  <div class="triple-grid" style="margin-top: 18px;">
+                    <div class="card">
+                      <div class="mini-label">Meaning</div>
+                      <h3>不再是功能列表</h3>
+                      <p>这个框架把 Hermes 从“功能堆砌的 Agent”翻译成一个真正的生产力栈。</p>
+                    </div>
+                    <div class="card">
+                      <div class="mini-label">Philosophy</div>
+                      <h3>工具变成认知延展层</h3>
+                      <p>你外包出去的不再只是执行动作，而是部分注意力编排权与工作流设计权。</p>
+                    </div>
+                    <div class="card">
+                      <div class="mini-label">Compounding</div>
+                      <h3>一次节省，不如持续复利</h3>
+                      <p>Hermes 的意义不是省一次 20 分钟，而是让下次、下下次都不必从零开始。</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content arch-intro-slide">
+                  <p class="eyebrow">Technical Architecture</p>
+                  <h2 class="title-lg">Hermes Agent 的关键，不是单个功能，而是这些层如何汇成持续运行系统。</h2>
+                  <p class="lead">
+                    从入口层到 AIAgent 核心，再到工具运行时、记忆与输出层，Hermes 的技术架构本质上是一条把“会话”升级成“系统”的流水线。
+                  </p>
+
+                  <div class="arch-diagram">
+                    <div class="arch-row arch-row--top">
+                      <div class="arch-box arch-box--compact">
+                        <div class="mini-label">Entry Point</div>
+                        <div class="arch-title">CLI</div>
+                        <div class="arch-text">终端里的主交互面，slash commands、工具调用和会话管理都从这里进入。</div>
+                      </div>
+                      <div class="arch-box arch-box--compact">
+                        <div class="mini-label">Entry Point</div>
+                        <div class="arch-title">Gateway</div>
+                        <div class="arch-text">Telegram、Discord、Slack、WhatsApp 等平台统一汇入同一消息网关。</div>
+                      </div>
+                      <div class="arch-box arch-box--compact">
+                        <div class="mini-label">Entry Point</div>
+                        <div class="arch-title">Cron</div>
+                        <div class="arch-text">定时任务与自动化从调度器触发，在隔离 session 中执行并回投结果。</div>
+                      </div>
+                      <div class="arch-box arch-box--compact">
+                        <div class="mini-label">Entry Point</div>
+                        <div class="arch-title">ACP / Library</div>
+                        <div class="arch-text">IDE 接入、脚本调用和批处理能力，把 Hermes 变成可嵌入的运行时。</div>
+                      </div>
+                    </div>
+
+                    <div class="arch-row arch-row--mid">
+                      <div class="arch-box arch-box--compact">
+                        <div class="mini-label">Core Runtime</div>
+                        <div class="arch-title">AIAgent Loop</div>
+                        <div class="arch-text">统一的会话主循环负责 prompt 组装、provider 路由、tool call 分发、重试、压缩与最终回答。</div>
+                        <div class="arch-pill-row">
+                          <span class="arch-pill">prompt_builder</span>
+                          <span class="arch-pill">runtime_provider</span>
+                          <span class="arch-pill">model_tools</span>
+                          <span class="arch-pill">context_compressor</span>
+                        </div>
+                      </div>
+                      <div class="arch-box arch-box--compact">
+                        <div class="mini-label">Persistent Layer</div>
+                        <div class="arch-title">Memory + Session Store</div>
+                        <div class="arch-text">内建记忆、可插拔 memory provider、以及带 FTS5 的 state.db 共同负责长期连续性。</div>
+                        <div class="arch-pill-row">
+                          <span class="arch-pill">MEMORY.md</span>
+                          <span class="arch-pill">USER.md</span>
+                          <span class="arch-pill">state.db</span>
+                          <span class="arch-pill">Honcho</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Technical Architecture</p>
+                  <h2 class="title-lg">当能力层、执行层和输出层接上以后，Hermes 才从 Agent 变成系统。</h2>
+                  <p class="lead">
+                    上一页回答的是“它从哪里进来、核心怎么运转”，这一页回答的是“它为什么能持续工作并回到你的生活里”。
+                  </p>
+
+                  <div class="arch-diagram">
+                    <div class="arch-row arch-row--bottom">
+                      <div class="arch-box">
+                        <div class="mini-label">Capability Layer</div>
+                        <div class="arch-title">Tools & Skills</div>
+                        <div class="arch-text">Tool registry、toolsets 和 progressive disclosure skills 组成 Hermes 的行动与方法库。</div>
+                        <div class="arch-pill-row">
+                          <span class="arch-pill">terminal</span>
+                          <span class="arch-pill">browser</span>
+                          <span class="arch-pill">web</span>
+                          <span class="arch-pill">skill_view</span>
+                        </div>
+                      </div>
+                      <div class="arch-box">
+                        <div class="mini-label">Execution Layer</div>
+                        <div class="arch-title">Delegation & Automation</div>
+                        <div class="arch-text">子代理、代码执行和 cron 让 Hermes 不只是响应命令，而是能拆解和编排工作流。</div>
+                        <div class="arch-pill-row">
+                          <span class="arch-pill">delegate_task</span>
+                          <span class="arch-pill">execute_code</span>
+                          <span class="arch-pill">cron ticker</span>
+                        </div>
+                      </div>
+                      <div class="arch-box">
+                        <div class="mini-label">Delivery Layer</div>
+                        <div class="arch-title">Output Back To Life</div>
+                        <div class="arch-text">最终结果被送回消息平台、本地文件或 Web UI，形成真正闭环，而不是停在临时对话框里。</div>
+                        <div class="arch-pill-row">
+                          <span class="arch-pill">Telegram</span>
+                          <span class="arch-pill">Discord</span>
+                          <span class="arch-pill">Slack</span>
+                          <span class="arch-pill">Web UI</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Learning Loop</p>
+                  <h2 class="title-lg">Hermes 所说的“自我积累 / 自我学习”，本质上是系统层的持续沉淀，而不是模型自己训练自己。</h2>
+                  <p class="lead">
+                    它真正做的不是改模型权重，而是把一次任务里形成的事实、偏好、历史和方法，分别写入不同的持久层，再在后续会话中重新调出来使用。
+                  </p>
+
+                  <div class="loop-layout">
+                    <div class="loop-board">
+                      <div class="mini-label">Learning Loop Diagram</div>
+                      <h3>一次任务是怎样变成长期能力的</h3>
+                      <div class="loop-grid">
+                        <div class="loop-node" data-flow="→">
+                          <div class="mini-label">01</div>
+                          <h3>Memory</h3>
+                          <p>稳定事实、偏好和约定写入 `MEMORY.md` / `USER.md`。</p>
+                        </div>
+                        <div class="loop-node" data-flow="↓">
+                          <div class="mini-label">02</div>
+                          <h3>Session Recall</h3>
+                          <p>完整历史进入 `state.db`，靠 FTS5 和 `session_search` 被重新唤回。</p>
+                        </div>
+                        <div class="loop-node" data-flow="↑">
+                          <div class="mini-label">03</div>
+                          <h3>Skills</h3>
+                          <p>复杂 workflow 沉淀成 skill，变成 procedural memory。</p>
+                        </div>
+                        <div class="loop-node" data-flow="←">
+                          <div class="mini-label">04</div>
+                          <h3>Compression</h3>
+                          <p>长会话前先 flush，再 structured summary，减少经验蒸发。</p>
+                        </div>
+                      </div>
+                      <div class="loop-summary">
+                        结果是：任务里的事实、方法、历史与偏好，不会只停留在一次回答里，而会在下一次会话重新进入系统。
+                      </div>
+                    </div>
+                    <div class="code-panel code-panel--compact">
+                      <div class="mini-label">Evidence In Code</div>
+                      <h3>仓库里的直接实现点</h3>
+                      <pre>tools/memory_tool.py
+- MEMORY.md / USER.md
+- frozen snapshot at session start
+
+agent/memory_manager.py
+- prefetch_all()
+- sync_all()
+- on_pre_compress()
+- on_session_end()
+
+hermes_state.py
+- persistent session storage
+- FTS5 full-text search
+
+run_agent.py
+- memory nudge interval
+- skill nudge interval
+- flush_memories() before compression</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Knowledge Layer</p>
+                  <h2 class="title-lg">真正厉害的不是“记住”，而是“有边界地记住”。</h2>
+                  <p class="lead">
+                    Hermes 关心的不是“记得更多”，而是“记得更对”。长期记忆被设计成 bounded, curated memory，而不是无上限上下文堆积。
+                  </p>
+                  <div class="split-grid" style="margin-top: 24px;">
+                    <div class="chart chart--compact">
+                      <div class="mini-label">Chart 3</div>
+                      <h3>内建记忆组件</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>组件</th>
+                            <th>作用</th>
+                            <th>含义</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>MEMORY.md</td>
+                            <td>记录环境事实、约定、经验</td>
+                            <td>保留高价值、低变动信息</td>
+                          </tr>
+                          <tr>
+                            <td>state.db</td>
+                            <td>历史会话库，支持检索与摘要</td>
+                            <td>历史不是常驻 prompt，而是按需唤回</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="panel">
+                      <div class="mini-label">Snapshot Design</div>
+                      <h3>记忆是快照，不是流</h3>
+                      <p>记忆在会话开始时注入，中途不会实时刷新；新的记忆先落盘，再在下一次会话中进入上下文。</p>
+                      <ul class="list-clean">
+                        <li>区分常驻、检索、技能沉淀</li>
+                        <li>更接近人的认知结构</li>
+                        <li>核心仍是保有目标与边界定义权</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Memory Options</p>
+                  <h2 class="title-lg">内建 memory 和 Honcho，不是替代关系，而是层级关系。</h2>
+                  <p class="lead">
+                    Hermes 的内建记忆强调稳定、简洁和 prompt 友好；Honcho 则是在其之上增加更深的用户建模与语义搜索。
+                  </p>
+                  <div class="split-grid" style="margin-top: 24px;">
+                    <div class="card">
+                      <div class="mini-label">Built-in</div>
+                      <h3>内建 memory</h3>
+                      <p>稳定、克制、适合长期缓存，适合大多数个人用户与本地部署。</p>
+                    </div>
+                    <div class="card">
+                      <div class="mini-label">Honcho</div>
+                      <h3>Provider Plugin</h3>
+                      <p>更偏“推断你”的外接后端，适合更深用户建模、多代理隔离与语义检索。</p>
+                    </div>
+                  </div>
+                  <div class="quote" style="margin-top: 18px;">
+                    <div class="mini-label">Takeaway</div>
+                    <blockquote>
+                      Hermes 真正像的，不是无边界的第二大脑，而是一个经过工程约束的数字自我延伸器官。
+                    </blockquote>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Memory Evidence</p>
+                  <h2 class="title-lg">记忆层的关键论点，在代码和文档里都有直接表述。</h2>
+                  <p class="lead">
+                    “bounded, curated memory”“built-in memory always active”“provider plugin additive” 这些都不是二次解读，而是仓库里直接写出来的设计约束。
+                  </p>
+                  <div class="code-grid">
+                    <div class="code-panel">
+                      <div class="mini-label">website/docs/user-guide/features/overview.md</div>
+                      <h3>官方文档表述</h3>
+                      <pre>- Persistent Memory — Bounded, curated memory that persists across sessions.
+Hermes remembers your preferences, projects, environment,
+and things it has learned via MEMORY.md and USER.md.</pre>
+                    </div>
+                    <div class="code-panel">
+                      <div class="mini-label">agent/memory_provider.py</div>
+                      <h3>代码中的硬约束</h3>
+                      <pre>One external provider is active at a time alongside the always-on built-in
+memory (MEMORY.md / USER.md).
+
+Built-in memory is always active as the first provider and cannot be removed.
+External providers (Honcho, Hindsight, Mem0, etc.) are additive — they never
+disable the built-in store.</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Skills System</p>
+                  <h2 class="title-lg">如果记忆解决“别忘”，那技能解决的是“别白做”。</h2>
+                  <p class="lead">
+                    Hermes 最像“会成长的系统”的地方，不只是 memory，而是 skills。记忆保存事实和偏好，技能则把经验压缩成可复用的方法。
+                  </p>
+                  <div class="split-grid" style="margin-top: 24px;">
+                    <div class="chart">
+                      <div class="mini-label">Chart 5</div>
+                      <h3>Skills 读取层级</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>层级</th>
+                            <th>动作</th>
+                            <th>作用</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Level 0</td>
+                            <td>skills_list()</td>
+                            <td>先看技能名称、描述、分类</td>
+                          </tr>
+                          <tr>
+                            <td>Level 1</td>
+                            <td>skill_view(name)</td>
+                            <td>加载完整技能内容与元数据</td>
+                          </tr>
+                          <tr>
+                            <td>Level 2</td>
+                            <td>skill_view(name, path)</td>
+                            <td>读取技能引用的具体文件</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="panel">
+                      <div class="mini-label">Why It Matters</div>
+                      <h3>经验开始具备可编译性</h3>
+                      <p>
+                        Skills 不是一句 prompt 模板，而是 on-demand knowledge documents。Hermes 通过 progressive disclosure 按需读取技能，不一次性把所有东西塞进上下文。
+                      </p>
+                      <ul class="list-clean">
+                        <li>节省 token</li>
+                        <li>降低上下文噪声</li>
+                        <li>让一次次任务有机会沉淀成结构化方法</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="quote" style="margin-top: 18px;">
+                    <div class="mini-label">Interpretation</div>
+                    <blockquote>
+                      技能系统真正可贵的，不是“下次回答更像一点”，而是把手艺从一次性的会话热闹，压缩成可调用、可复用、可改进的知识资产。
+                    </blockquote>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Skills Evidence</p>
+                  <h2 class="title-lg">Skills 的 progressive disclosure，不只是理念，而是工具接口本身。</h2>
+                  <p class="lead">
+                    Hermes 没把 skills 设计成“一次性塞满上下文”的模板，而是做成按需加载的知识文档系统。
+                  </p>
+                  <div class="code-grid">
+                    <div class="code-panel">
+                      <div class="mini-label">website/docs/user-guide/features/overview.md</div>
+                      <h3>官方定义</h3>
+                      <pre>- Skills System — On-demand knowledge documents the agent can load when needed.
+Skills follow a progressive disclosure pattern to minimize token usage.</pre>
+                    </div>
+                    <div class="code-panel">
+                      <div class="mini-label">agent/skill_commands.py</div>
+                      <h3>按需读取 supporting files</h3>
+                      <pre>parts.append("[This skill has supporting files you can load with the skill_view tool:]")
+...
+parts.append(
+  f'\nTo view any of these, use: skill_view(name="{skill_view_target}", file_path="&lt;path&gt;")'
+)</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Execution Layer</p>
+                  <h2 class="title-lg">Agent 的意义，不是会调工具，而是会拆工作。</h2>
+                  <p class="lead">
+                    Hermes 真正强的执行层，不只是 persistent machine access，而是 delegation：生成 isolated child agents 来并行处理任务，每个 subagent 拥有独立 conversation、terminal session 与 toolset。
+                  </p>
+                  <div class="chart" style="margin-top: 24px;">
+                    <div class="mini-label">Chart 6</div>
+                    <h3>适合委派 vs 不适合委派</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>适合</th>
+                          <th>原因</th>
+                          <th>不适合</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>研究型子问题</td>
+                          <td>上下文快速膨胀，适合独立处理</td>
+                          <td>单步工具调用</td>
+                        </tr>
+                        <tr>
+                          <td>平行独立工作流</td>
+                          <td>可显著缩短总完成时间</td>
+                          <td>非常机械的短流程</td>
+                        </tr>
+                        <tr>
+                          <td>需要 fresh context 的任务</td>
+                          <td>避免主线程被噪音污染</td>
+                          <td>需要频繁向用户澄清的任务</td>
+                        </tr>
+                        <tr>
+                          <td>推理密集型子任务</td>
+                          <td>让主代理保留更高层统筹</td>
+                          <td>小规模文件微调</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="triple-grid" style="margin-top: 18px;">
+                    <div class="card">
+                      <div class="mini-label">Delegation</div>
+                      <h3>上下文隔离</h3>
+                      <p>返回给主代理的是总结结果，而不是全部中间过程，这让并行不是多线程，而是真正的任务隔离。</p>
+                    </div>
+                    <div class="card">
+                      <div class="mini-label">Cron</div>
+                      <h3>调度进入执行面</h3>
+                      <p>自然语言、cron expression、interval、ISO 时间戳都能成为触发条件，到期任务由 gateway daemon 驱动。</p>
+                    </div>
+                    <div class="card">
+                      <div class="mini-label">Philosophy</div>
+                      <h3>工具开始在你离开时继续工作</h3>
+                      <p>人不再是每一步点击确认的操作者，而开始成为目标设定者、边界制定者与结果验收者。</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Execution Evidence</p>
+                  <h2 class="title-lg">Delegation、cron 和 gateway 的论点，也都能在仓库里直接落到代码。</h2>
+                  <p class="lead">
+                    这些不是抽象能力词，而是明确写在运行时和文档里的系统机制。
+                  </p>
+                  <div class="code-grid">
+                    <div class="code-panel">
+                      <div class="mini-label">website/docs/user-guide/features/delegation.md</div>
+                      <h3>隔离子代理</h3>
+                      <pre>The delegate_task tool spawns child AIAgent instances with isolated context,
+restricted toolsets, and their own terminal sessions.
+
+Each child gets a fresh conversation and works independently —
+only its final summary enters the parent's context.</pre>
+                    </div>
+                    <div class="code-panel">
+                      <div class="mini-label">cron/scheduler.py</div>
+                      <h3>调度与后台执行</h3>
+                      <pre>Provides tick() which checks for due jobs and runs them.
+The gateway calls this every 60 seconds from a background thread.
+
+Uses a file-based lock (~/.hermes/cron/.tick.lock)
+so only one tick runs at a time.</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Output Layer</p>
+                  <h2 class="title-lg">Agent 真正落地，不是回答得好，而是结果能回到你的生活里。</h2>
+                  <p class="lead">
+                    很多 Agent 死在最后一步：结果困在对话框里。Hermes 把“输出回投”当成系统能力，所以最该先配的往往不是更花哨的 prompt，而是 gateway。
+                  </p>
+                  <div class="split-grid" style="margin-top: 24px;">
+                    <div class="panel">
+                      <div class="mini-label">Gateway First</div>
+                      <h3>别只盯着 CLI</h3>
+                      <ul class="list-clean">
+                        <li>离开电脑后仍能触达 agent</li>
+                        <li>结果能自动回投到习惯通道</li>
+                        <li>工作流不再依赖单一终端窗口</li>
+                      </ul>
+                    </div>
+                    <div class="quote quote--compact">
+                      <div class="mini-label">Takeaway</div>
+                      <blockquote>
+                        一旦结果能稳定流回你已经习惯的消息系统，Agent 才真正进入你的日常，而不是停留在 demo 阶段。
+                      </blockquote>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Session & Output Evidence</p>
+                  <h2 class="title-lg">“输出回投”和“跨会话连续性”在仓库里也有很硬的基础设施证据。</h2>
+                  <p class="lead">
+                    一边是统一 gateway 入口，一边是带 FTS5 的持久化 session store，这两者共同支撑了你在 PPT 里强调的长期系统感。
+                  </p>
+                  <div class="code-grid">
+                    <div class="code-panel">
+                      <div class="mini-label">README.md</div>
+                      <h3>统一消息入口</h3>
+                      <pre>Telegram, Discord, Slack, WhatsApp, Signal, and CLI —
+all from a single gateway process.</pre>
+                    </div>
+                    <div class="code-panel">
+                      <div class="mini-label">hermes_state.py</div>
+                      <h3>FTS5 持久会话库</h3>
+                      <pre>Provides persistent session storage with FTS5 full-text search...
+
+Key design decisions:
+- WAL mode for concurrent readers + one writer
+- FTS5 virtual table for fast text search across all session messages
+- Session source tagging ('cli', 'telegram', 'discord', etc.)</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Web UI</p>
+                  <h2 class="title-lg">如果不想天天盯着终端，就把 Hermes 变成一个持续工作台。</h2>
+                  <p class="lead">
+                    hermes-webui 是最自然的图形界面入口。它让 Hermes 从“命令行神器”变成可远程、可守护、可随身访问的工作界面。
+                  </p>
+                  <div class="split-grid" style="margin-top: 24px;">
+                    <div class="step">
+                      <div class="mini-label">Quick Start</div>
+                      <h3>最简启动路径</h3>
+                      <code>git clone https://github.com/nesquena/hermes-webui.git hermes-webui</code>
+                      <code>cd hermes-webui && ./start.sh</code>
+                      <p>先跑起来，再考虑 Docker、SSH tunnel、Tailscale 等长期用法。</p>
+                    </div>
+                    <div class="chart">
+                      <div class="mini-label">Chart 7</div>
+                      <h3>Web UI 场景推荐</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>场景</th>
+                            <th>推荐</th>
+                            <th>原因</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>本机快速上手</td>
+                            <td>./start.sh</td>
+                            <td>自动发现路径与环境，最快</td>
+                          </tr>
+                          <tr>
+                            <td>VPS 长期运行</td>
+                            <td>Docker / Compose</td>
+                            <td>便于守护、重启与迁移</td>
+                          </tr>
+                          <tr>
+                            <td>手机访问</td>
+                            <td>Tailscale + 密码保护</td>
+                            <td>把 Hermes 变成随身工作台</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <div class="hero-grid">
+                    <div>
+                      <p class="eyebrow">Signals From Founders</p>
+                      <h2 class="title-lg">Teknium 的两句话，概括了 Hermes 为什么值得长期关注。</h2>
+                      <p class="lead">
+                        一句是 blend：它介于 coding agent 与 generalist agent 之间。另一句是 self improve and learn over time：系统开始优化自己完成任务的方式，而不只是完成一次任务。
+                      </p>
+                    </div>
+                    <div class="panel">
+                      <div class="mini-label">Infrastructure Direction</div>
+                      <h3>Hermes 更像一层持续性的技术自组织层。</h3>
+                      <p>
+                        最令人兴奋的，不只是“工具替代人”，而是“工具开始替代工具”。
+                        当 Agent 开始主动修复旧系统间接口、搭桥并维持工作流连续性，它就逐渐从产品长成基础设施。
+                      </p>
+                    </div>
+                  </div>
+                  <div class="split-grid" style="margin-top: 24px;">
+                    <div class="quote quote--compact">
+                      <div class="mini-label">Quote 1</div>
+                      <blockquote>
+                        Hermes 是 coding agent 与 generalist agent 的 blend。
+                      </blockquote>
+                      <cite>潜台词：未来有价值的 Agent 不会再按“写代码的”和“陪聊天的”严格分开。</cite>
+                    </div>
+                    <div class="quote">
+                      <div class="mini-label">Quote 2</div>
+                      <blockquote>
+                        “Wild emergent things happen when an agent can self improve and learn over time.”
+                      </blockquote>
+                      <cite>翻译成工程语言：系统开始优化自己完成任务的方式，而不只是完成一次任务。</cite>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Community Validation</p>
+                  <h2 class="title-lg">社区推荐 Hermes，不是因为它完美，而是因为它真的有“体感”。</h2>
+                  <p class="lead">
+                    最有说服力的，不是品牌叙事，而是连续工作之后的体感：它记住偏好、复用做法、压缩上下文，并减少你重复解释的成本。
+                  </p>
+                  <div class="chart" style="margin-top: 24px;">
+                    <div class="mini-label">Chart 8</div>
+                    <h3>社区推荐理由</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>推荐理由</th>
+                          <th>更深含义</th>
+                          <th>来源</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>开箱即用 / 体验顺滑</td>
+                          <td>低摩擦的初始成功体验</td>
+                          <td>Austin</td>
+                        </tr>
+                        <tr>
+                          <td>记忆系统“真的有感”</td>
+                          <td>跨 session 减少重复劳动</td>
+                          <td>Austin / Mahesh</td>
+                        </tr>
+                        <tr>
+                          <td>更懂用户与 codebase</td>
+                          <td>个性化可反复验证</td>
+                          <td>BoringMktr / Mak</td>
+                        </tr>
+                        <tr>
+                          <td>本地运行 / 自托管</td>
+                          <td>主权与可控性本身就是价值</td>
+                          <td>Mahesh / Mak</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <div class="hero-grid">
+                    <div>
+                      <p class="eyebrow">Community Quotes</p>
+                      <h2 class="title-lg">真正有分量的，是那些“带保留的正面评价”。</h2>
+                      <p class="lead">
+                        真正成熟的技术社区，不会问“它完不完美”，而会问“值不值得现在就投入时间”。
+                      </p>
+                    </div>
+                    <div class="chart">
+                      <div class="mini-label">Chart 9</div>
+                      <h3>积极信号与保留意见</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>积极信号</th>
+                            <th>保留意见</th>
+                            <th>为何增加可信度</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>记忆 + loop 被反复夸</td>
+                            <td>仍属 early 阶段</td>
+                            <td>口碑并非无脑吹捧</td>
+                          </tr>
+                          <tr>
+                            <td>开发 / 自动化反馈好</td>
+                            <td>成熟用户有迁移成本</td>
+                            <td>推荐是有边界的</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="split-grid" style="margin-top: 24px;">
+                    <div class="quote">
+                      <div class="mini-label">Austin</div>
+                      <blockquote>
+                        “It just works out of the box.”
+                      </blockquote>
+                      <cite>低摩擦的初始成功体验，说明它跨过了一部分产品化门槛。</cite>
+                    </div>
+                    <div class="quote">
+                      <div class="mini-label">The Boring Marketer</div>
+                      <blockquote>
+                        “It manages its own memory and it actually works.”
+                      </blockquote>
+                      <cite>把记忆、搜索、压缩和 cron 体验重新验证了一遍。</cite>
+                    </div>
+                  </div>
+                  <div class="quote quote--compact" style="margin-top: 18px;">
+                    <div class="mini-label">Mahesh</div>
+                    <blockquote>
+                      “It’s not just another chatbot wrapper.”
+                    </blockquote>
+                    <cite>真正回应的是 Agent 主权与长期系统的问题。</cite>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content">
+                  <p class="eyebrow">Practice Guide</p>
+                  <h2 class="title-lg">别把 Hermes 当玩具，要把它当账户体系来养。</h2>
+                  <p class="lead">
+                    如果真想用起来，而不只是截图发朋友圈，最好的方法不是上来追求最花哨的玩法，而是先把它养成一个稳定工作的系统账户。
+                  </p>
+                  <div class="timeline">
+                    <div class="timeline-item">
+                      <div class="timeline-item__index">01</div>
+                      <div>
+                        <div class="mini-label">第一步</div>
+                        <h3>先跑通本体</h3>
+                        <p>安装 Hermes，跑通 <strong>hermes model</strong>、<strong>gateway</strong>、<strong>hermes</strong>，先确保本体稳定工作。</p>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-item__index">02</div>
+                      <div>
+                        <div class="mini-label">第二步</div>
+                        <h3>先理解迁移，再决定导入</h3>
+                        <p>用 <strong>claw migrate --dry-run</strong> 观察旧资产如何映射，不要把“迁移成功”简化成“文件复制成功”。</p>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-item__index">03</div>
+                      <div>
+                        <div class="mini-label">第三步</div>
+                        <h3>选择固定高频任务</h3>
+                        <p>比如投研摘要、周报整理、会议纪要归档，让 Hermes 开始积累真实方法，而不是空转。</p>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-item__index">04</div>
+                      <div>
+                        <div class="mini-label">第四步</div>
+                        <h3>配一个消息出口和图形界面</h3>
+                        <p>让它脱离单一终端，进入你的日常工作流。Gateway + Web UI 往往比继续微调 prompt 更重要。</p>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-item__index">05</div>
+                      <div>
+                        <div class="mini-label">第五步</div>
+                        <h3>最后再追求高阶玩法</h3>
+                        <p>Honcho、远程部署、多代理分工都很值得玩，但应建立在稳定回路先跑起来的前提上。</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="swiper-slide">
+            <section class="slide">
+              <div class="slide__inner">
+                <div class="slide__content hero-grid">
+                  <div>
+                    <p class="eyebrow">Closing</p>
+                    <h2 class="title-lg">真正的分水岭，不是 AI 会不会做事，而是它会不会在时间中成为你的一部分。</h2>
+                    <p class="lead">
+                      以后真正值钱的，不再只是“会不会点按钮、会不会写 prompt”，而是你是否能定义目标、设置边界、判断结果、校正方向。AI 负责把方法磨得越来越顺，人负责确保这条路值得走。
+                    </p>
+                    <div class="meta-row" style="margin-top: 22px;">
+                      <span class="meta-pill">记忆</span>
+                      <span class="meta-pill">手艺</span>
+                      <span class="meta-pill">偏好</span>
+                      <span class="meta-pill">工作流</span>
+                      <span class="meta-pill">长期演化</span>
+                    </div>
+                    <div class="footer-actions" style="margin-top: 26px;">
+                      <a class="button button--primary" href="https://github.com/NousResearch/hermes-agent" target="_blank" rel="noreferrer">进入 Hermes 仓库</a>
+                      <a class="button button--ghost" href="https://hermes-agent.nousresearch.com/docs/" target="_blank" rel="noreferrer">阅读官方文档</a>
+                    </div>
+                  </div>
+                  <div class="split-grid">
+                    <div class="quote">
+                      <div class="mini-label">Final Thesis</div>
+                      <blockquote>
+                        Hermes 真正像的，不是一个无边界的“第二大脑”，而是一个经过工程约束的数字自我延伸器官。
+                      </blockquote>
+                    </div>
+                    <div class="quote">
+                      <div class="mini-label">Farewell</div>
+                      <blockquote>
+                        愿你和你的 Agent 永相随。
+                      </blockquote>
+                      <cite>欢迎正式加入 Hermes Agent 社区。</cite>
+                    </div>
+                    <div class="panel" style="grid-column: 1 / -1;">
+                      <div class="mini-label">Why This Matters</div>
+                      <h3>Hermes 的重要性，不在于它已经抵达终点，而在于它清楚地指向了 Agent 作为长期账户体系的方向。</h3>
+                      <p>
+                        对一个正在寻找新生产力边界的人来说，这已经足够重要。因为这不是科幻式 AGI，而是我们第一次比较具体地看见，什么叫数字化自我延伸。
+                      </p>
+                    </div>
+                  </div>
+                  <p class="footnote" style="margin-top: 18px;">This deck was expanded from your essay into a 10-slide web presentation with denser argumentation and chart-based narrative blocks.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="swiper-pagination"></div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button id="prevBtn" type="button" aria-label="Previous slide">↑</button>
+      <button id="nextBtn" type="button" aria-label="Next slide">↓</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.min.js"></script>
+    <script>
+      const totalSlides = 21;
+      const currentSlideEl = document.getElementById("currentSlide");
+
+      const swiper = new Swiper(".swiper", {
+        direction: "vertical",
+        speed: 1200,
+        slidesPerView: 1,
+        spaceBetween: 0,
+        allowTouchMove: true,
+        nested: false,
+        mousewheel: {
+          forceToAxis: true,
+          releaseOnEdges: false,
+          sensitivity: 1,
+        },
+        keyboard: {
+          enabled: true,
+        },
+        pagination: {
+          el: ".swiper-pagination",
+          clickable: true,
+        },
+        on: {
+          init(instance) {
+            currentSlideEl.textContent = String(instance.realIndex + 1).padStart(2, "0");
+          },
+          slideChange(instance) {
+            currentSlideEl.textContent = String(instance.realIndex + 1).padStart(2, "0");
+          },
+        },
+      });
+
+      document.getElementById("prevBtn").addEventListener("click", () => swiper.slidePrev());
+      document.getElementById("nextBtn").addEventListener("click", () => swiper.slideNext());
+
+      const canvas = document.getElementById("scene");
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 11.5);
+
+      const master = new THREE.Group();
+      scene.add(master);
+
+      const pointCount = 180;
+      const positions = new Float32Array(pointCount * 3);
+      const velocities = [];
+      const basePositions = [];
+
+      for (let i = 0; i < pointCount; i += 1) {
+        const radius = 2 + Math.random() * 5.4;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.cos(phi) * 0.82;
+        const z = radius * Math.sin(phi) * Math.sin(theta);
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+        basePositions.push({x, y, z});
+        velocities.push(0.3 + Math.random() * 0.9);
+      }
+
+      const pointsGeometry = new THREE.BufferGeometry();
+      pointsGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+      const pointsMaterial = new THREE.PointsMaterial({
+        color: "#ffd37b",
+        size: 0.09,
+        transparent: true,
+        opacity: 0.9,
+      });
+
+      const points = new THREE.Points(pointsGeometry, pointsMaterial);
+      master.add(points);
+
+      const lineMaterial = new THREE.LineBasicMaterial({
+        color: "#ff8b56",
+        transparent: true,
+        opacity: 0.12,
+      });
+
+      const lineGeometries = [];
+      for (let i = 0; i < pointCount; i += 8) {
+        const next = (i + 19) % pointCount;
+        const vertices = new Float32Array([
+          positions[i * 3],
+          positions[i * 3 + 1],
+          positions[i * 3 + 2],
+          positions[next * 3],
+          positions[next * 3 + 1],
+          positions[next * 3 + 2],
+        ]);
+        const lineGeometry = new THREE.BufferGeometry();
+        lineGeometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+        lineGeometries.push({geometry: lineGeometry, from: i, to: next});
+        master.add(new THREE.Line(lineGeometry, lineMaterial));
+      }
+
+      const rings = [];
+      for (let i = 0; i < 3; i += 1) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(2.8 + i * 1.28, 0.015, 12, 120),
+          new THREE.MeshBasicMaterial({
+            color: i === 1 ? "#ff7d4d" : "#ffbe57",
+            transparent: true,
+            opacity: 0.14 - i * 0.03,
+          })
+        );
+        ring.rotation.x = Math.PI / (2.4 + i * 0.35);
+        ring.rotation.y = i * 0.6;
+        rings.push(ring);
+        master.add(ring);
+      }
+
+      const glow = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(4.1, 1),
+        new THREE.MeshBasicMaterial({
+          color: "#f6a344",
+          wireframe: true,
+          transparent: true,
+          opacity: 0.08,
+        })
+      );
+      master.add(glow);
+
+      function resize() {
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        camera.aspect = window.innerWidth / Math.max(window.innerHeight, 1);
+        camera.updateProjectionMatrix();
+      }
+
+      resize();
+      window.addEventListener("resize", resize);
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const t = performance.now() * 0.00028;
+        const slideInfluence = swiper.realIndex / Math.max(totalSlides - 1, 1);
+
+        for (let i = 0; i < pointCount; i += 1) {
+          const base = basePositions[i];
+          positions[i * 3] = base.x + Math.sin(t * velocities[i] + i * 0.21) * 0.14;
+          positions[i * 3 + 1] = base.y + Math.cos(t * (velocities[i] + 0.18) + i * 0.17) * 0.16;
+          positions[i * 3 + 2] = base.z + Math.sin(t * (velocities[i] + 0.27) + i * 0.11) * 0.18;
+        }
+
+        pointsGeometry.attributes.position.needsUpdate = true;
+
+        lineGeometries.forEach(({geometry, from, to}) => {
+          const attr = geometry.attributes.position.array;
+          attr[0] = positions[from * 3];
+          attr[1] = positions[from * 3 + 1];
+          attr[2] = positions[from * 3 + 2];
+          attr[3] = positions[to * 3];
+          attr[4] = positions[to * 3 + 1];
+          attr[5] = positions[to * 3 + 2];
+          geometry.attributes.position.needsUpdate = true;
+        });
+
+        master.rotation.y += 0.00135 + slideInfluence * 0.0008;
+        master.rotation.x = Math.sin(t * 0.7) * 0.14;
+        master.position.y = Math.sin(t * 1.15) * 0.12;
+        master.scale.setScalar(1 + slideInfluence * 0.08);
+
+        rings.forEach((ring, index) => {
+          ring.rotation.z += 0.001 + index * 0.0005;
+          ring.rotation.x += 0.0004;
+        });
+
+        glow.rotation.x -= 0.0008;
+        glow.rotation.z += 0.001;
+        glow.scale.setScalar(1 + Math.sin(t * 1.4) * 0.03 + slideInfluence * 0.04);
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>
