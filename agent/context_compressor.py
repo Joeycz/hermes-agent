@@ -18,7 +18,9 @@ import time
 from typing import Any, Dict, List, Optional
 
 from agent.auxiliary_client import call_llm
+from agent.context_engine import ContextEngine
 from agent.model_metadata import (
+    MINIMUM_CONTEXT_LENGTH,
     get_model_context_length,
     estimate_messages_tokens_rough,
 )
@@ -50,8 +52,8 @@ _CHARS_PER_TOKEN = 4
 _SUMMARY_FAILURE_COOLDOWN_SECONDS = 600
 
 
-class ContextCompressor:
-    """Compresses conversation context when approaching the model's context limit.
+class ContextCompressor(ContextEngine):
+    """Default context engine — compresses conversation context via lossy summarization.
 
     Algorithm:
       1. Prune old tool results (cheap, no LLM call)
@@ -60,6 +62,36 @@ class ContextCompressor:
       4. Summarize middle turns with structured LLM prompt
       5. On subsequent compactions, iteratively update the previous summary
     """
+
+    @property
+    def name(self) -> str:
+        return "compressor"
+
+    def on_session_reset(self) -> None:
+        """Reset all per-session state for /new or /reset."""
+        super().on_session_reset()
+        self._context_probed = False
+        self._context_probe_persistable = False
+        self._previous_summary = None
+
+    def update_model(
+        self,
+        model: str,
+        context_length: int,
+        base_url: str = "",
+        api_key: str = "",
+        provider: str = "",
+    ) -> None:
+        """Update model info after a model switch or fallback activation."""
+        self.model = model
+        self.base_url = base_url
+        self.api_key = api_key
+        self.provider = provider
+        self.context_length = context_length
+        self.threshold_tokens = max(
+            int(context_length * self.threshold_percent),
+            MINIMUM_CONTEXT_LENGTH,
+        )
 
     def __init__(
         self,
@@ -90,7 +122,14 @@ class ContextCompressor:
             config_context_length=config_context_length,
             provider=provider,
         )
-        self.threshold_tokens = int(self.context_length * threshold_percent)
+        # Floor: never compress below MINIMUM_CONTEXT_LENGTH tokens even if
+        # the percentage would suggest a lower value.  This prevents premature
+        # compression on large-context models at 50% while keeping the % sane
+        # for models right at the minimum.
+        self.threshold_tokens = max(
+            int(self.context_length * threshold_percent),
+            MINIMUM_CONTEXT_LENGTH,
+        )
         self.compression_count = 0
 
         # Derive token budgets: ratio is relative to the threshold, not total context
@@ -114,7 +153,6 @@ class ContextCompressor:
 
         self.last_prompt_tokens = 0
         self.last_completion_tokens = 0
-        self.last_total_tokens = 0
 
         self.summary_model = summary_model_override or ""
 
@@ -126,27 +164,11 @@ class ContextCompressor:
         """Update tracked token usage from API response."""
         self.last_prompt_tokens = usage.get("prompt_tokens", 0)
         self.last_completion_tokens = usage.get("completion_tokens", 0)
-        self.last_total_tokens = usage.get("total_tokens", 0)
 
     def should_compress(self, prompt_tokens: int = None) -> bool:
         """Check if context exceeds the compression threshold."""
         tokens = prompt_tokens if prompt_tokens is not None else self.last_prompt_tokens
         return tokens >= self.threshold_tokens
-
-    def should_compress_preflight(self, messages: List[Dict[str, Any]]) -> bool:
-        """Quick pre-flight check using rough estimate (before API call)."""
-        rough_estimate = estimate_messages_tokens_rough(messages)
-        return rough_estimate >= self.threshold_tokens
-
-    def get_status(self) -> Dict[str, Any]:
-        """Get current compression status for display/logging."""
-        return {
-            "last_prompt_tokens": self.last_prompt_tokens,
-            "threshold_tokens": self.threshold_tokens,
-            "context_length": self.context_length,
-            "usage_percent": min(100, (self.last_prompt_tokens / self.context_length * 100)) if self.context_length else 0,
-            "compression_count": self.compression_count,
-        }
 
     # ------------------------------------------------------------------
     # Tool output pruning (cheap pre-pass, no LLM call)
@@ -284,12 +306,18 @@ class ContextCompressor:
 
         return "\n\n".join(parts)
 
-    def _generate_summary(self, turns_to_summarize: List[Dict[str, Any]]) -> Optional[str]:
+    def _generate_summary(self, turns_to_summarize: List[Dict[str, Any]], focus_topic: str = None) -> Optional[str]:
         """Generate a structured summary of conversation turns.
 
         Uses a structured template (Goal, Progress, Decisions, Files, Next Steps)
         inspired by Pi-mono and OpenCode. When a previous summary exists,
         generates an iterative update instead of summarizing from scratch.
+
+        Args:
+            focus_topic: Optional focus string for guided compression.  When
+                provided, the summariser prioritises preserving information
+                related to this topic and is more aggressive about compressing
+                everything else.  Inspired by Claude Code's ``/compact``.
 
         Returns None if all attempts fail — the caller should drop
         the middle turns without a summary rather than inject a useless
@@ -391,6 +419,14 @@ Use this exact structure:
 Target ~{summary_budget} tokens. Be specific — include file paths, command outputs, error messages, and concrete values rather than vague descriptions. The goal is to prevent the next assistant from repeating work or losing important details.
 
 Write only the summary body. Do not include any preamble or prefix."""
+
+        # Inject focus topic guidance when the user provides one via /compress <focus>.
+        # This goes at the end of the prompt so it takes precedence.
+        if focus_topic:
+            prompt += f"""
+
+FOCUS TOPIC: "{focus_topic}"
+The user has requested that this compaction PRIORITISE preserving all information related to the focus topic above. For content related to "{focus_topic}", include full detail — exact values, file paths, command outputs, error messages, and decisions. For content NOT related to the focus topic, summarise more aggressively (brief one-liners or omit if truly irrelevant). The focus topic sections should receive roughly 60-70% of the summary token budget."""
 
         try:
             call_kwargs = {
@@ -609,7 +645,7 @@ Write only the summary body. Do not include any preamble or prefix."""
     # Main compression entry point
     # ------------------------------------------------------------------
 
-    def compress(self, messages: List[Dict[str, Any]], current_tokens: int = None) -> List[Dict[str, Any]]:
+    def compress(self, messages: List[Dict[str, Any]], current_tokens: int = None, focus_topic: str = None) -> List[Dict[str, Any]]:
         """Compress conversation messages by summarizing middle turns.
 
         Algorithm:
@@ -621,6 +657,12 @@ Write only the summary body. Do not include any preamble or prefix."""
 
         After compression, orphaned tool_call / tool_result pairs are cleaned
         up so the API never receives mismatched IDs.
+
+        Args:
+            focus_topic: Optional focus string for guided compression.  When
+                provided, the summariser will prioritise preserving information
+                related to this topic and be more aggressive about compressing
+                everything else.  Inspired by Claude Code's ``/compact``.
         """
         n_messages = len(messages)
         # Only need head + 3 tail messages minimum (token budget decides the real tail size)
@@ -678,7 +720,7 @@ Write only the summary body. Do not include any preamble or prefix."""
             )
 
         # Phase 3: Generate structured summary
-        summary = self._generate_summary(turns_to_summarize)
+        summary = self._generate_summary(turns_to_summarize, focus_topic=focus_topic)
 
         # Phase 4: Assemble compressed message list
         compressed = []
@@ -691,33 +733,43 @@ Write only the summary body. Do not include any preamble or prefix."""
                 )
             compressed.append(msg)
 
-        _merge_summary_into_tail = False
-        if summary:
-            last_head_role = messages[compress_start - 1].get("role", "user") if compress_start > 0 else "user"
-            first_tail_role = messages[compress_end].get("role", "user") if compress_end < n_messages else "user"
-            # Pick a role that avoids consecutive same-role with both neighbors.
-            # Priority: avoid colliding with head (already committed), then tail.
-            if last_head_role in ("assistant", "tool"):
-                summary_role = "user"
-            else:
-                summary_role = "assistant"
-            # If the chosen role collides with the tail AND flipping wouldn't
-            # collide with the head, flip it.
-            if summary_role == first_tail_role:
-                flipped = "assistant" if summary_role == "user" else "user"
-                if flipped != last_head_role:
-                    summary_role = flipped
-                else:
-                    # Both roles would create consecutive same-role messages
-                    # (e.g. head=assistant, tail=user — neither role works).
-                    # Merge the summary into the first tail message instead
-                    # of inserting a standalone message that breaks alternation.
-                    _merge_summary_into_tail = True
-            if not _merge_summary_into_tail:
-                compressed.append({"role": summary_role, "content": summary})
-        else:
+        # If LLM summary failed, insert a static fallback so the model
+        # knows context was lost rather than silently dropping everything.
+        if not summary:
             if not self.quiet_mode:
-                logger.debug("No summary model available — middle turns dropped without summary")
+                logger.warning("Summary generation failed — inserting static fallback context marker")
+            n_dropped = compress_end - compress_start
+            summary = (
+                f"{SUMMARY_PREFIX}\n"
+                f"Summary generation was unavailable. {n_dropped} conversation turns were "
+                f"removed to free context space but could not be summarized. The removed "
+                f"turns contained earlier work in this session. Continue based on the "
+                f"recent messages below and the current state of any files or resources."
+            )
+
+        _merge_summary_into_tail = False
+        last_head_role = messages[compress_start - 1].get("role", "user") if compress_start > 0 else "user"
+        first_tail_role = messages[compress_end].get("role", "user") if compress_end < n_messages else "user"
+        # Pick a role that avoids consecutive same-role with both neighbors.
+        # Priority: avoid colliding with head (already committed), then tail.
+        if last_head_role in ("assistant", "tool"):
+            summary_role = "user"
+        else:
+            summary_role = "assistant"
+        # If the chosen role collides with the tail AND flipping wouldn't
+        # collide with the head, flip it.
+        if summary_role == first_tail_role:
+            flipped = "assistant" if summary_role == "user" else "user"
+            if flipped != last_head_role:
+                summary_role = flipped
+            else:
+                # Both roles would create consecutive same-role messages
+                # (e.g. head=assistant, tail=user — neither role works).
+                # Merge the summary into the first tail message instead
+                # of inserting a standalone message that breaks alternation.
+                _merge_summary_into_tail = True
+        if not _merge_summary_into_tail:
+            compressed.append({"role": summary_role, "content": summary})
 
         for i in range(compress_end, n_messages):
             msg = messages[i].copy()
